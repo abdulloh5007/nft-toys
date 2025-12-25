@@ -11,22 +11,31 @@ import styles from './page.module.css';
 
 export default function TestQRPage() {
     const [selectedToy, setSelectedToy] = useState<string>('Raphael');
+    const [toyNumber, setToyNumber] = useState<string>('1');
     const [activationUrl, setActivationUrl] = useState<string>('');
+    const [isLoading, setIsLoading] = useState(true);
 
-    const getNfcId = (name: string) => `nfc_${name.toLowerCase().replace(/\s/g, '_')}`;
+    const getNfcId = (name: string, number: string) =>
+        `nfc_${name.toLowerCase().replace(/\s/g, '_')}_${number}`;
 
     useEffect(() => {
-        const nfcId = getNfcId(selectedToy);
+        // Client-side only - generate token
+        const nfcId = getNfcId(selectedToy, toyNumber);
         const token = generateToken(nfcId);
-        const origin = typeof window !== 'undefined' ? window.location.origin : 'https://example.com';
+        const origin = window.location.origin;
         setActivationUrl(`${origin}/activate/${encodeURIComponent(token)}`);
-    }, [selectedToy]);
+        setIsLoading(false);
+    }, [selectedToy, toyNumber]);
 
     const handleRegenerate = () => {
-        const nfcId = getNfcId(selectedToy);
-        const token = generateToken(nfcId);
-        const origin = typeof window !== 'undefined' ? window.location.origin : 'https://example.com';
-        setActivationUrl(`${origin}/activate/${encodeURIComponent(token)}`);
+        setIsLoading(true);
+        setTimeout(() => {
+            const nfcId = getNfcId(selectedToy, toyNumber);
+            const token = generateToken(nfcId);
+            const origin = window.location.origin;
+            setActivationUrl(`${origin}/activate/${encodeURIComponent(token)}`);
+            setIsLoading(false);
+        }, 300);
     };
 
     return (
@@ -47,13 +56,32 @@ export default function TestQRPage() {
                     ))}
                 </div>
 
+                {/* Toy Number Input */}
+                <div className={styles.numberInput}>
+                    <label>Номер:</label>
+                    <input
+                        type="number"
+                        value={toyNumber}
+                        onChange={(e) => setToyNumber(e.target.value)}
+                        placeholder="1"
+                        min={1}
+                        max={9999}
+                    />
+                </div>
+
                 {/* QR Card */}
                 <div className={styles.qrCard}>
                     <div className={styles.qrWrapper}>
-                        <QRCode value={activationUrl} size={220} bgColor="#ffffff" fgColor="#000000" />
+                        {isLoading ? (
+                            <div className={styles.loading}>
+                                <RefreshCw size={32} className={styles.spinner} />
+                            </div>
+                        ) : (
+                            <QRCode value={activationUrl} size={220} bgColor="#ffffff" fgColor="#000000" />
+                        )}
                     </div>
 
-                    <h2 className={styles.toyName}>{selectedToy}</h2>
+                    <h2 className={styles.toyName}>{selectedToy} #{toyNumber}</h2>
 
                     {/* Full URL Display */}
                     <div className={styles.urlBox}>

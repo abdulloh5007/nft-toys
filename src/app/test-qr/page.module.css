@@ -10,7 +10,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 24px 16px 120px;
+    padding: 80px 16px 120px;
     max-width: 500px;
     margin: 0 auto;
     width: 100%;
@@ -113,4 +113,59 @@
 
 .regenBtn:active {
     transform: scale(0.95);
+}
+
+/* Number Input */
+.numberInput {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 10px 16px;
+    border-radius: 12px;
+}
+
+.numberInput label {
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+.numberInput input {
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-size: 18px;
+    font-weight: 600;
+    width: 60px;
+    text-align: center;
+    outline: none;
+}
+
+.numberInput input::placeholder {
+    color: rgba(255, 255, 255, 0.3);
+}
+
+/* Loading */
+.loading {
+    width: 220px;
+    height: 220px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.spinner {
+    color: var(--accent-color);
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
 }
