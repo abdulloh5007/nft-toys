@@ -1,0 +1,157 @@
+.container {
+    min-height: 100vh;
+    background: var(--bg-primary);
+    padding-bottom: 120px;
+}
+
+.main {
+    padding: 80px 16px 20px;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.profileHeader {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--color-primary-base), var(--accent-color));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: 700;
+    color: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.userInfo {
+    display: flex;
+    flex-direction: column;
+}
+
+.userName {
+    font-size: clamp(18px, 5vw, 20px);
+    font-weight: 700;
+    margin: 0;
+}
+
+.userId {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.walletSection {
+    background: var(--bg-secondary);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: var(--radius-lg);
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 32px;
+}
+
+.balance {
+    display: flex;
+    flex-direction: column;
+}
+
+.label {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.amountWrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.walletIcon {
+    color: var(--color-primary-base);
+}
+
+.amount {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.sectionTitle {
+    font-size: 18px;
+    margin-bottom: 16px;
+    padding-left: 4px;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 12px;
+}
+
+.empty {
+    text-align: center;
+    color: var(--text-secondary);
+    padding: 40px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+}
+
+.loginCard {
+    background: var(--bg-secondary);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: var(--radius-lg);
+    padding: 40px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    margin-top: 40px;
+    animation: scaleIn 0.3s ease-out;
+}
+
+.loginIcon {
+    font-size: 48px;
+    margin-bottom: 24px;
+    background: rgba(255, 255, 255, 0.05);
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.loginTitle {
+    font-size: clamp(20px, 6vw, 24px);
+    margin-bottom: 12px;
+    color: var(--text-primary);
+}
+
+.loginDesc {
+    color: var(--text-secondary);
+    margin-bottom: 32px;
+    line-height: 1.5;
+}
+
+@keyframes scaleIn {
+    from {
+        transform: scale(0.95);
+        opacity: 0;
+    }
+
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
