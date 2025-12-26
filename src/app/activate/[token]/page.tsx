@@ -6,117 +6,131 @@ import { useParams, useRouter } from 'next/navigation';
 import { Header } from '@/components/layout/Header';
 import { Navigation } from '@/components/layout/Navigation';
 import { Button } from '@/components/ui/Button';
-import { ToyCard } from '@/components/features/ToyCard';
 import { useLanguage } from '@/lib/context/LanguageContext';
 import { useTelegram } from '@/lib/context/TelegramContext';
-import { mockToys, Toy } from '@/lib/mock/toys';
-import { validateToken, consumeToken, getTokenInfo } from '@/lib/activation/tokenService';
 import { Zap, AlertTriangle, Home } from 'lucide-react';
 import { TgsPlayer } from '@/components/ui/TgsPlayer';
 import styles from './page.module.css';
 
 type PageStatus = 'loading' | 'valid' | 'invalid_token' | 'already_used' | 'toy_not_found' | 'activated_success';
 
+interface ToyData {
+    id: string;
+    name: string;
+    model: string;
+    serialNumber: string;
+    rarity: 'common' | 'rare' | 'legendary';
+    tgsUrl: string;
+    nfcId: string;
+    status: string;
+    ownerId?: number;
+}
+
 export default function ActivatePage() {
     const params = useParams();
     const router = useRouter();
     const { t } = useLanguage();
     const { user } = useTelegram();
-    const [toy, setToy] = useState<Toy | null>(null);
+    const [toy, setToy] = useState<ToyData | null>(null);
     const [status, setStatus] = useState<PageStatus>('loading');
     const [activationTime, setActivationTime] = useState<string | null>(null);
     const [errorMessage, setErrorMessage] = useState<string>('');
 
     useEffect(() => {
-        // Validate token from URL (decode URL encoding first)
-        const rawToken = params.token as string;
-        const token = decodeURIComponent(rawToken);
+        const checkQRCode = async () => {
+            const rawToken = params.token as string;
+            const token = decodeURIComponent(rawToken);
 
-        if (!token) {
-            setStatus('invalid_token');
-            setErrorMessage('No token provided');
-            return;
-        }
-
-        // Decode token to get toyId
-        const tokenInfo = getTokenInfo(token);
-        if (!tokenInfo) {
-            setStatus('invalid_token');
-            setErrorMessage('Invalid token format');
-            return;
-        }
-
-        // Validate token (check signature and usage)
-        const validation = validateToken(token);
-
-        if (!validation.valid) {
-            if (validation.error === 'already_used') {
-                setStatus('already_used');
-                setActivationTime(validation.usedAt || null);
-                setErrorMessage(validation.usedAt || '');
-            } else {
+            if (!token) {
                 setStatus('invalid_token');
-                setErrorMessage(validation.error || 'Token validation failed');
+                setErrorMessage('No token provided');
+                return;
             }
-            return;
-        }
 
-        // Find the toy
-        const toyId = validation.toyId!;
-        let found = mockToys.find(t => t.nfcId === toyId || t.id === toyId);
+            // Check QR code status via API
+            try {
+                const response = await fetch(`/api/qr/activate?token=${encodeURIComponent(token)}`);
+                const data = await response.json();
 
-        // If not found, try to create a toy from nfcId (e.g., nfc_raphael_1 -> Raphael #1)
-        if (!found && toyId.startsWith('nfc_')) {
-            const parts = toyId.replace('nfc_', '').split('_');
-            const serialNum = parts.pop() || '1';
-            const nameSlug = parts.join('_');
+                if (!response.ok) {
+                    if (data.code === 'INVALID_TOKEN') {
+                        setStatus('invalid_token');
+                        setErrorMessage('Invalid token');
+                    } else if (data.code === 'NOT_FOUND') {
+                        setStatus('toy_not_found');
+                        setErrorMessage('QR code not found');
+                    } else {
+                        setStatus('invalid_token');
+                        setErrorMessage(data.error || 'Unknown error');
+                    }
+                    return;
+                }
 
-            // Find model by name slug
-            const { PEPE_MODELS } = require('@/lib/data/pepe_models');
-            const model = PEPE_MODELS.find((m: any) =>
-                m.name.toLowerCase().replace(/\s/g, '_') === nameSlug
-            );
+                // Check if already used
+                if (data.status === 'used') {
+                    setStatus('already_used');
+                    setActivationTime(data.usedAt
+                        ? new Date(data.usedAt).toLocaleString('ru-RU')
+                        : ''
+                    );
+                    return;
+                }
 
-            if (model) {
-                found = {
-                    id: toyId,
-                    name: model.name,
+                // QR is valid and available
+                setToy({
+                    id: data.toy.id,
+                    name: data.toy.name,
                     model: 'Series 1',
-                    serialNumber: `#${serialNum.padStart(3, '0')}`,
-                    rarity: model.rarity,
-                    price: model.rarity === 'legendary' ? 2500000 : model.rarity === 'rare' ? 650000 : 199000,
-                    imageUrl: '/toys/pepe_default.png',
-                    tgsUrl: `/models/${model.tgsFile}`,
-                    status: 'available' as const,
-                    nfcId: toyId,
-                    rarityChance: model.chance,
-                };
+                    serialNumber: `#${data.toy.serialNumber.toString().padStart(3, '0')}`,
+                    rarity: data.toy.rarity,
+                    tgsUrl: data.toy.tgsUrl,
+                    nfcId: data.toy.id,
+                    status: 'available',
+                });
+                setStatus('valid');
+            } catch (error) {
+                console.error('Error checking QR:', error);
+                setStatus('invalid_token');
+                setErrorMessage('Error validating QR code');
             }
-        }
+        };
 
-        if (found) {
-            setToy(found);
-            setStatus('valid');
-        } else {
-            setStatus('toy_not_found');
-            setErrorMessage(`Toy not found: ${toyId}`);
-        }
+        checkQRCode();
     }, [params.token]);
 
-    const handleActivate = () => {
+    const handleActivate = async () => {
         if (!toy) return;
-        const token = decodeURIComponent(params.token as string);
 
         setStatus('loading');
 
-        setTimeout(() => {
-            // Consume the token (mark as used)
-            const consumed = consumeToken(token, user?.id);
+        try {
+            const rawToken = params.token as string;
+            const token = decodeURIComponent(rawToken);
 
-            if (!consumed) {
-                setStatus('already_used');
-                setErrorMessage('Token was already used');
-                return;
+            // Activate via API
+            const response = await fetch('/api/qr/activate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    token,
+                    userId: user?.id?.toString() || 'anonymous',
+                }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                if (data.code === 'ALREADY_USED') {
+                    setStatus('already_used');
+                    setActivationTime(data.usedAt
+                        ? new Date(data.usedAt).toLocaleString('ru-RU')
+                        : ''
+                    );
+                    return;
+                }
+                throw new Error(data.error);
             }
 
             // Update toy state
@@ -126,7 +140,7 @@ export default function ActivatePage() {
                 ownerId: user?.id || 999,
             });
 
-            setActivationTime(new Date().toLocaleString('ru-RU', {
+            setActivationTime(new Date(data.activatedAt).toLocaleString('ru-RU', {
                 day: '2-digit',
                 month: '2-digit',
                 year: 'numeric',
@@ -134,7 +148,12 @@ export default function ActivatePage() {
                 minute: '2-digit'
             }));
             setStatus('activated_success');
-        }, 1000);
+        } catch (error) {
+            console.error('Activation error:', error);
+            // Show error status
+            setStatus('invalid_token');
+            setErrorMessage('Activation failed');
+        }
     };
 
     // Confetti celebration effect

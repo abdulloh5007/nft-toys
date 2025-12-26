@@ -87,9 +87,9 @@
 .legendary::after {
     /* RGB Shine for Legendary - Vertical Stack (Red Top, Green Mid, Blue Bot) */
     background: linear-gradient(to bottom,
-            rgba(255, 0, 0, 0.7) 0%,
-            rgba(0, 255, 0, 0.7) 50%,
-            rgba(0, 0, 255, 0.7) 100%);
+            rgba(255, 0, 0, 0.6) 0%,
+            rgba(0, 255, 0, 0.6) 50%,
+            rgba(0, 0, 255, 0.6) 100%);
 
     /* Shape the square background into a vertical beam using mask */
     -webkit-mask-image: linear-gradient(to right,
