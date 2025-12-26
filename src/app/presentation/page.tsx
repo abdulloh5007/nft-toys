@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Smartphone, Scan, Zap, Shield, Users, Gift } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Smartphone, Scan, Zap, Shield, Users, Gift, Eye, EyeOff } from 'lucide-react';
 import { TgsPlayer } from '@/components/ui/TgsPlayer';
 import styles from './page.module.css';
 
@@ -12,6 +12,41 @@ interface Slide {
     content: React.ReactNode;
     icon?: React.ReactNode;
 }
+
+// Batch 1 models with TGS files
+const batch1Models = {
+    legendary: [
+        { name: 'X-Ray', qty: 1, tgs: 'x-ray.tgs' },
+        { name: 'Cozy Galaxy', qty: 1, tgs: 'cozy_galaxy.tgs' },
+        { name: 'Gucci Leap', qty: 1, tgs: 'gucci leap.tgs' },
+        { name: 'Aqua Plush', qty: 1, tgs: 'aqua_plush.tgs' },
+    ],
+    rare: [
+        { name: 'Magnate', qty: 2, tgs: 'magnate.tgs' },
+        { name: 'Amalgam', qty: 2, tgs: 'amalgam.tgs' },
+        { name: 'Stripes', qty: 2, tgs: 'stripes.tgs' },
+        { name: 'Frozen', qty: 2, tgs: 'frozen.tgs' },
+        { name: 'Hue Jester', qty: 2, tgs: 'hue_jester.tgs' },
+        { name: 'Hot Head', qty: 2, tgs: 'hot_head.tgs' },
+        { name: 'Princess', qty: 2, tgs: 'princess.tgs' },
+        { name: 'Pink Latex', qty: 2, tgs: 'pink_latex.tgs' },
+    ],
+    common: [
+        { name: 'Ninja Mike', qty: 6, tgs: 'ninja_mike.tgs' },
+        { name: 'Raphael', qty: 6, tgs: 'raphael.tgs' },
+        { name: 'Bavaria', qty: 6, tgs: 'bavariya.tgs' },
+        { name: 'Red Pepple', qty: 6, tgs: 'red_pepple.tgs' },
+        { name: 'Louis Vuittoad', qty: 6, tgs: 'louis_vuittoad.tgs' },
+        { name: 'Milano', qty: 6, tgs: 'milano.tgs' },
+        { name: 'Barcelona', qty: 6, tgs: 'barcelona.tgs' },
+        { name: 'Leonardo', qty: 6, tgs: 'leonardo.tgs' },
+        { name: 'Donatello', qty: 6, tgs: 'donatello.tgs' },
+        { name: 'Two Face', qty: 6, tgs: 'two_face.tgs' },
+        { name: 'Yellow Hug', qty: 6, tgs: 'yellow_hug.tgs' },
+        { name: 'Pumpkin', qty: 7, tgs: 'pumpkin.tgs' },
+        { name: 'Sunset', qty: 7, tgs: 'sunset.tgs' },
+    ]
+};
 
 export default function PresentationPage() {
     const [currentSlide, setCurrentSlide] = useState(0);
@@ -121,52 +156,93 @@ export default function PresentationPage() {
             )
         },
         {
-            id: 6,
-            title: "Monetizatsiya",
-            icon: <span className={styles.emoji}>💰</span>,
-            content: (
-                <ul className={styles.bulletList}>
-                    <li><strong>O'yinchoq sotish</strong> — 199K - 2.5M UZS</li>
-                    <li><strong>Komissiya</strong> qayta sotishdan</li>
-                    <li><strong>Cheklangan seriyalar</strong></li>
-                    <li><strong>Brendlar bilan hamkorlik</strong></li>
-                </ul>
-            )
-        },
-        {
             id: 7,
             title: "Ishlab chiqarish",
             icon: <span className={styles.emoji}>📦</span>,
             content: (
-                <div className={styles.calcContent}>
-                    <div className={styles.calcRow}>
-                        <span className={styles.calcLabel}>Modellar soni:</span>
-                        <span className={styles.calcValue}>50 ta → <strong>25 ta</strong> (yarmi)</span>
-                    </div>
-                    <div className={styles.calcRow}>
-                        <span className={styles.calcLabel}>Partiyalar:</span>
-                        <span className={styles.calcValue}>25 × 4 = <strong>100 ta</strong> o'yinchoq</span>
-                    </div>
-                    <div className={styles.calcDivider} />
-                    <div className={styles.rarityBreakdown}>
-                        <div className={styles.rarityItem}>
-                            <span className={styles.rarityDot} style={{ background: '#fbbf24' }} />
-                            <span>Legendary: <strong>4 ta</strong></span>
+                <div className={styles.calcWrapper}>
+                    <div className={styles.calcContent}>
+                        <div className={styles.calcRow}>
+                            <span className={styles.calcLabel}>Modellar soni:</span>
+                            <span className={styles.calcValue}>49 ta → <strong>25 ta</strong></span>
                         </div>
-                        <div className={styles.rarityItem}>
-                            <span className={styles.rarityDot} style={{ background: '#3b82f6' }} />
-                            <span>Rare: <strong>16 ta</strong></span>
+                        <div className={styles.calcRow}>
+                            <span className={styles.calcLabel}>Partiyalar:</span>
+                            <span className={styles.calcValue}>25 × 4 = <strong>100 ta</strong> o'yinchoq</span>
                         </div>
-                        <div className={styles.rarityItem}>
-                            <span className={styles.rarityDot} style={{ background: '#9ca3af' }} />
-                            <span>Common: <strong>80 ta</strong></span>
+                        <div className={styles.calcDivider} />
+                        <div className={styles.rarityBreakdown}>
+                            <div className={styles.rarityItem}>
+                                <span className={styles.rarityDot} style={{ background: '#fbbf24' }} />
+                                <span>Legendary: 4 model × 1 = <strong>4 ta</strong></span>
+                            </div>
+                            <div className={styles.rarityItem}>
+                                <span className={styles.rarityDot} style={{ background: '#3b82f6' }} />
+                                <span>Rare: 8 model × 2 = <strong>16 ta</strong></span>
+                            </div>
+                            <div className={styles.rarityItem}>
+                                <span className={styles.rarityDot} style={{ background: '#9ca3af' }} />
+                                <span>Common: 13 model = <strong>80 ta</strong></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button
+                        className={styles.showModelsBtn}
+                        onClick={() => goToSlide(currentSlide + 1)}
+                    >
+                        <Eye size={18} />
+                        Modellarni ko'rish →
+                    </button>
+                </div>
+            )
+        },
+        {
+            id: 8,
+            title: "1-Partiya Modellari",
+            content: (
+                <div className={styles.modelsShowcase}>
+                    <div className={styles.modelSection}>
+                        <h3 className={styles.sectionTitle} style={{ color: '#fbbf24' }}>🟡 Legendary (×1)</h3>
+                        <div className={styles.modelGrid}>
+                            {batch1Models.legendary.map(m => (
+                                <div key={m.name} className={styles.modelCard}>
+                                    <TgsPlayer src={`/models/${m.tgs}`} style={{ width: 60, height: 60 }} autoplay={false} />
+                                    <span className={styles.modelName}>{m.name}</span>
+                                    <span className={styles.modelQty}>×{m.qty}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                    <div className={styles.modelSection}>
+                        <h3 className={styles.sectionTitle} style={{ color: '#3b82f6' }}>🔵 Rare (×2)</h3>
+                        <div className={styles.modelGrid}>
+                            {batch1Models.rare.map(m => (
+                                <div key={m.name} className={styles.modelCard}>
+                                    <TgsPlayer src={`/models/${m.tgs}`} style={{ width: 60, height: 60 }} autoplay={false} />
+                                    <span className={styles.modelName}>{m.name}</span>
+                                    <span className={styles.modelQty}>×{m.qty}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                    <div className={styles.modelSection}>
+                        <h3 className={styles.sectionTitle} style={{ color: '#9ca3af' }}>⚪ Common (×6-7)</h3>
+                        <div className={styles.modelGrid}>
+                            {batch1Models.common.map(m => (
+                                <div key={m.name} className={styles.modelCard}>
+                                    <TgsPlayer src={`/models/${m.tgs}`} style={{ width: 60, height: 60 }} autoplay={false} />
+                                    <span className={styles.modelName}>{m.name}</span>
+                                    <span className={styles.modelQty}>×{m.qty}</span>
+                                </div>
+                            ))}
                         </div>
                     </div>
                 </div>
             )
         },
         {
-            id: 8,
+            id: 9,
             title: "Qadoqlash",
             content: (
                 <div className={styles.packagingFlow}>
@@ -199,7 +275,7 @@ export default function PresentationPage() {
             )
         },
         {
-            id: 9,
+            id: 10,
             title: "Rahmat!",
             subtitle: "Savollar?",
             content: (

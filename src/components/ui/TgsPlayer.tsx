@@ -45,7 +45,12 @@ export const TgsPlayer = React.memo(
                     setAnimationData(JSON.parse(json));
 
                     if (typeof window !== "undefined") {
-                        window.sessionStorage.setItem(storageKey, json);
+                        try {
+                            window.sessionStorage.setItem(storageKey, json);
+                        } catch {
+                            // Quota exceeded - clear old cache and skip caching
+                            console.warn("TGS cache quota exceeded, skipping cache");
+                        }
                     }
                 } catch (err) {
                     console.error("TGS parse error:", err);

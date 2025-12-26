@@ -30,7 +30,7 @@ export const PEPE_MODELS: PepeModel[] = [
     { name: 'Christmas', rarity: 'rare', chance: 1.3, tgsFile: 'christmas.tgs' },
     { name: 'Amalgam', rarity: 'rare', chance: 1.3, tgsFile: 'amalgam.tgs' },
     { name: 'Stripes', rarity: 'rare', chance: 1.3, tgsFile: 'stripes.tgs' },
-    { name: 'Pink Latex', rarity: 'rare', chance: 1.3, tgsFile: 'ping_latex.tgs' },
+    { name: 'Pink Latex', rarity: 'rare', chance: 1.3, tgsFile: 'pink_latex.tgs' },
     { name: 'Frozen', rarity: 'rare', chance: 1.3, tgsFile: 'frozen.tgs' },
     { name: 'Princess', rarity: 'rare', chance: 1.3, tgsFile: 'princess.tgs' },
     { name: 'Hot Head', rarity: 'rare', chance: 1.3, tgsFile: 'hot_head.tgs' },

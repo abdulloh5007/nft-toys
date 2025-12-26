@@ -506,6 +506,138 @@
     color: #fff;
 }
 
+/* Calc Wrapper */
+.calcWrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    width: 100%;
+}
+
+.showModelsBtn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #fff;
+    border-radius: 10px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.showModelsBtn:hover {
+    background: var(--accent-color);
+    border-color: var(--accent-color);
+}
+
+.modelsModal {
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 20px;
+    width: 100%;
+    max-width: 600px;
+    max-height: 400px;
+    overflow-y: auto;
+    animation: fadeUp 0.3s ease-out;
+}
+
+.modelGroup {
+    margin-bottom: 16px;
+}
+
+.modelGroup:last-child {
+    margin-bottom: 0;
+}
+
+.modelGroup h4 {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0 0 8px;
+}
+
+.modelTags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.modelTag {
+    padding: 4px 10px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* Models Showcase */
+.modelsShowcase {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    width: 100%;
+    max-width: 700px;
+    max-height: 60vh;
+    overflow-y: auto;
+    padding: 4px;
+}
+
+.modelSection {
+    animation: fadeUp 0.4s ease-out both;
+}
+
+.modelSection:nth-child(1) {
+    animation-delay: 0.1s;
+}
+
+.modelSection:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.modelSection:nth-child(3) {
+    animation-delay: 0.3s;
+}
+
+.sectionTitle {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0 0 12px;
+}
+
+.modelGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 10px;
+}
+
+.modelCard {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+}
+
+.modelName {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.7);
+    text-align: center;
+    line-height: 1.2;
+}
+
+.modelQty {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent-color);
+}
+
 /* Packaging Flow */
 .packagingFlow {
     display: flex;
