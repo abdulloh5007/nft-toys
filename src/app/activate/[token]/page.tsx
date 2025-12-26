@@ -63,7 +63,36 @@ export default function ActivatePage() {
 
         // Find the toy
         const toyId = validation.toyId!;
-        const found = mockToys.find(t => t.nfcId === toyId || t.id === toyId);
+        let found = mockToys.find(t => t.nfcId === toyId || t.id === toyId);
+
+        // If not found, try to create a toy from nfcId (e.g., nfc_raphael_1 -> Raphael #1)
+        if (!found && toyId.startsWith('nfc_')) {
+            const parts = toyId.replace('nfc_', '').split('_');
+            const serialNum = parts.pop() || '1';
+            const nameSlug = parts.join('_');
+
+            // Find model by name slug
+            const { PEPE_MODELS } = require('@/lib/data/pepe_models');
+            const model = PEPE_MODELS.find((m: any) =>
+                m.name.toLowerCase().replace(/\s/g, '_') === nameSlug
+            );
+
+            if (model) {
+                found = {
+                    id: toyId,
+                    name: model.name,
+                    model: 'Series 1',
+                    serialNumber: `#${serialNum.padStart(3, '0')}`,
+                    rarity: model.rarity,
+                    price: model.rarity === 'legendary' ? 2500000 : model.rarity === 'rare' ? 650000 : 199000,
+                    imageUrl: '/toys/pepe_default.png',
+                    tgsUrl: `/models/${model.tgsFile}`,
+                    status: 'available' as const,
+                    nfcId: toyId,
+                    rarityChance: model.chance,
+                };
+            }
+        }
 
         if (found) {
             setToy(found);
