@@ -39,7 +39,7 @@ const CustomSelect = ({ value, options, onChange, placeholder, disabled, error }
     return (
         <div className={styles.selectContainer} ref={containerRef}>
             <button
-                className={`${styles.selectTrigger} ${isOpen ? styles.active : ''} ${disabled ? styles.disabled : ''} ${error ? styles.error : ''}`}
+                className={`${styles.selectTrigger} ${isOpen ? styles.active : ''} ${disabled ? styles.disabled : ''} ${error ? styles.inputError : ''}`}
                 onClick={() => !disabled && setIsOpen(!isOpen)}
                 disabled={disabled}
             >
@@ -324,7 +324,7 @@ export default function AdminPage() {
                                         setValidationErrors(prev => ({ ...prev, serial: false }));
                                     }}
                                     placeholder="1"
-                                    className={`${styles.input} ${validationErrors.serial ? styles.error : ''}`}
+                                    className={`${styles.input} ${validationErrors.serial ? styles.inputError : ''}`}
                                 />
                             </div>
                         </div>

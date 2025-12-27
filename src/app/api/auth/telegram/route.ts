@@ -92,6 +92,26 @@ export async function POST(request: NextRequest) {
             username: user.username,
         });
 
+        // Save/update user in Firestore
+        const { db } = await import('@/lib/firebase/config');
+        const { doc, setDoc, getDoc, serverTimestamp } = await import('firebase/firestore');
+
+        const userRef = doc(db, 'users', uid);
+        const existingUser = await getDoc(userRef);
+
+        const userData = {
+            telegramId: user.id,
+            firstName: user.first_name,
+            lastName: user.last_name || null,
+            username: user.username || null,
+            photoUrl: user.photo_url || null,
+            languageCode: user.language_code || null,
+            lastLoginAt: serverTimestamp(),
+            ...(existingUser.exists() ? {} : { createdAt: serverTimestamp() })
+        };
+
+        await setDoc(userRef, userData, { merge: true });
+
         return NextResponse.json({
             success: true,
             token: customToken,

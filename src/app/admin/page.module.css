@@ -130,9 +130,12 @@
     color: #fff;
     font-size: 16px;
     outline: none;
-    transition: all 0.2s ease;
+    transition: border-color 0.2s ease, background 0.2s ease;
     width: 100%;
     box-sizing: border-box;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
 }
 
 .select:focus,
@@ -607,8 +610,8 @@
     cursor: not-allowed;
 }
 
-.selectTrigger.error,
-.input.error {
+.selectTrigger.inputError,
+.input.inputError {
     border-color: #ef4444;
 }
 
