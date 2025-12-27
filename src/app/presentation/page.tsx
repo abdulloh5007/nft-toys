@@ -116,7 +116,7 @@ export default function PresentationPage() {
                             <p>Egalik tasdiqlandi</p>
                         </div>
                     </div>
-                    <a href="/test-qr" className={styles.demoBtn} target="_blank">
+                    <a href="/admin" className={styles.demoBtn} target="_blank">
                         Demo ko'rish →
                     </a>
                 </div>
@@ -124,15 +124,38 @@ export default function PresentationPage() {
         },
         {
             id: 4,
-            title: "Xavfsizlik",
-            icon: <Shield size={48} className={styles.slideIcon} />,
+            title: "Bizning Maqsad",
+            icon: <span className={styles.emoji}>🇺🇿</span>,
             content: (
-                <ul className={styles.bulletList}>
-                    <li><strong>Bir martalik havolalar</strong> — faqat 1 marta aktivlashtirish</li>
-                    <li><strong>Shifrlangan tokenlar</strong></li>
-                    <li><strong>Soxtalashtirib bo'lmaydi</strong></li>
-                    <li><strong>Barcha tranzaksiyalar tarixi</strong></li>
-                </ul>
+                <div className={styles.visionContent}>
+                    <p className={styles.visionText}>
+                        <strong>O'zbekistonni raqamlashtirish</strong> — bizning asosiy maqsadimiz.
+                        Jismoniy narsalardan raqamli texnologiyalarga o'tish — bu kelajak.
+                    </p>
+                    <div className={styles.comparisonGrid}>
+                        <div className={styles.comparisonItem}>
+                            <span className={styles.comparisonIcon}>📦</span>
+                            <span className={styles.comparisonTitle}>Jismoniy</span>
+                            <ul className={styles.comparisonList}>
+                                <li>❌ Nusxa ko'chirish mumkin</li>
+                                <li>❌ Soxtalash oson</li>
+                                <li>❌ Buzilishi mumkin</li>
+                            </ul>
+                        </div>
+                        <div className={styles.comparisonItem}>
+                            <span className={styles.comparisonIcon}>💎</span>
+                            <span className={styles.comparisonTitle}>Raqamli</span>
+                            <ul className={styles.comparisonList}>
+                                <li>✅ Nusxa ko'chirib bo'lmaydi</li>
+                                <li>✅ Soxtalash imkonsiz</li>
+                                <li>✅ Abadiy saqlanadi</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <p className={styles.visionNote}>
+                        Yagona xavf — tizimni buzish. Biz uni har qanday usullar bilan himoya qilamiz!
+                    </p>
+                </div>
             )
         },
         {
@@ -156,7 +179,7 @@ export default function PresentationPage() {
             )
         },
         {
-            id: 7,
+            id: 6,
             title: "Ishlab chiqarish",
             icon: <span className={styles.emoji}>📦</span>,
             content: (
@@ -198,7 +221,7 @@ export default function PresentationPage() {
             )
         },
         {
-            id: 8,
+            id: 7,
             title: "1-Partiya Modellari",
             content: (
                 <div className={styles.modelsShowcase}>
@@ -242,7 +265,7 @@ export default function PresentationPage() {
             )
         },
         {
-            id: 9,
+            id: 8,
             title: "Qadoqlash",
             content: (
                 <div className={styles.packagingFlow}>
@@ -275,7 +298,7 @@ export default function PresentationPage() {
             )
         },
         {
-            id: 10,
+            id: 9,
             title: "Rahmat!",
             subtitle: "Savollar?",
             content: (

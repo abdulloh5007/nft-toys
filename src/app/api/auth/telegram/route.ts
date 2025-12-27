@@ -60,6 +60,11 @@ function verifyTelegramData(initData: string): { valid: boolean; user?: Telegram
 }
 
 export async function POST(request: NextRequest) {
+    // Rate limiting for auth (stricter - 10/min)
+    const { authLimit } = await import('@/lib/middleware/rateLimit');
+    const rateLimitResponse = authLimit(request);
+    if (rateLimitResponse) return rateLimitResponse;
+
     try {
         const body = await request.json();
         const { initData } = body;

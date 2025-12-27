@@ -58,14 +58,31 @@ function verifyToken(token: string): { valid: boolean; nfcId?: string } {
 }
 
 export async function POST(request: NextRequest) {
+    // Rate limiting
+    const { strictLimit } = await import('@/lib/middleware/rateLimit');
+    const rateLimitResponse = strictLimit(request);
+    if (rateLimitResponse) return rateLimitResponse;
+
     try {
         const body = await request.json();
-        const { modelName, serialNumber } = body;
+
+        // Sanitize input
+        const { sanitizeString, validateRequired, validateNumber } = await import('@/lib/utils/validation');
+        const modelName = sanitizeString(body.modelName || '');
+        const serialNumber = body.serialNumber;
 
         // Validate input
-        if (!modelName || !serialNumber) {
+        const validation = validateRequired({ modelName, serialNumber }, ['modelName', 'serialNumber']);
+        if (!validation.valid) {
             return NextResponse.json(
-                { error: 'Model name and serial number are required' },
+                { error: 'Model name and serial number are required', code: 'VALIDATION_ERROR', fields: validation.missing },
+                { status: 400 }
+            );
+        }
+
+        if (!validateNumber(serialNumber, 1, 999999)) {
+            return NextResponse.json(
+                { error: 'Serial number must be between 1 and 999999', code: 'VALIDATION_ERROR' },
                 { status: 400 }
             );
         }
