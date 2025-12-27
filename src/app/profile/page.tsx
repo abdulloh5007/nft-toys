@@ -5,7 +5,6 @@ import { Header } from '@/components/layout/Header';
 import { Navigation } from '@/components/layout/Navigation';
 import { ToyCard } from '@/components/features/ToyCard';
 import { TransferModal } from '@/components/features/TransferModal';
-import { CreateQRModal } from '@/components/features/CreateQRModal';
 import { Button } from '@/components/ui/Button';
 import { useLanguage } from '@/lib/context/LanguageContext';
 import { useTelegram } from '@/lib/context/TelegramContext';
@@ -18,7 +17,6 @@ export default function ProfilePage() {
     const { t } = useLanguage();
     const { user } = useTelegram();
     const [selectedToy, setSelectedToy] = useState<Toy | null>(null);
-    const [showQRModal, setShowQRModal] = useState(false);
     const [stats, setStats] = useState({ total: 0, used: 0, created: 0 });
 
     // Load QR stats
@@ -32,7 +30,7 @@ export default function ProfilePage() {
             }
         };
         loadStats();
-    }, [showQRModal]);
+    }, []);
 
     // Filter toys owned by this user (if logged in)
     const userId = user?.id;
@@ -155,7 +153,7 @@ export default function ProfilePage() {
                     <Button
                         variant="primary"
                         fullWidth
-                        onClick={() => setShowQRModal(true)}
+                        onClick={() => window.location.href = '/admin'}
                         className={styles.createBtn}
                     >
                         <Plus size={18} />
@@ -195,13 +193,7 @@ export default function ProfilePage() {
                 />
             )}
 
-            <CreateQRModal
-                isOpen={showQRModal}
-                onClose={() => setShowQRModal(false)}
-                onSuccess={() => {
-                    // Stats will reload via useEffect
-                }}
-            />
+
         </div>
     );
 }
