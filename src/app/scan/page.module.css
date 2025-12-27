@@ -3,6 +3,8 @@
     background: var(--bg-primary);
     display: flex;
     flex-direction: column;
+    padding-top: 80px;
+    padding-bottom: 120px;
 }
 
 .main {

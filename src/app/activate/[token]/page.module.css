@@ -1,8 +1,13 @@
 .container {
     min-height: 100vh;
+    min-height: 100dvh;
     display: flex;
     flex-direction: column;
     background: var(--bg-primary);
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding-top: 80px;
+    padding-bottom: 120px;
 }
 
 .main {
@@ -54,7 +59,7 @@
     flex-direction: column;
     align-items: center;
     gap: 20px;
-    padding: 20px 0 40px;
+    padding: 0;
 }
 
 .animationSection {
