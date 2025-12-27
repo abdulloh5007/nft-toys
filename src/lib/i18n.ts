@@ -71,6 +71,7 @@ export const translations = {
         rarity_rare: 'Rare',
         rarity_legendary: 'Legendary',
         serial_exists: 'Serial number already used for model',
+        actions: 'Actions',
     },
     ru: {
         home: 'Главная',
@@ -142,6 +143,7 @@ export const translations = {
         rarity_rare: 'Редкий',
         rarity_legendary: 'Легендарный',
         serial_exists: 'Серийный номер уже используется для модели',
+        actions: 'Действия',
     },
     uz: {
         home: 'Bosh sahifa',
@@ -213,5 +215,6 @@ export const translations = {
         rarity_rare: 'Noyob',
         rarity_legendary: 'Afsonaviy',
         serial_exists: 'Seriya raqami allaqachon modelda ishlatilgan',
+        actions: 'Amallar',
     },
 };

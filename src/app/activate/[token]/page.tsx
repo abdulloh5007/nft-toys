@@ -81,7 +81,7 @@ export default function ActivatePage() {
                     id: data.toy.id,
                     name: data.toy.name,
                     model: 'Series 1',
-                    serialNumber: `#${data.toy.serialNumber.toString().padStart(3, '0')}`,
+                    serialNumber: `#${data.toy.serialNumber}`,
                     rarity: data.toy.rarity,
                     tgsUrl: data.toy.tgsUrl,
                     nfcId: data.toy.id,
@@ -264,7 +264,7 @@ export default function ActivatePage() {
                     </div>
                     <div className={styles.infoCard}>
                         <span className={styles.infoLabel}>{t('number') || 'Number'}</span>
-                        <span className={styles.infoValue}>{(toy as any).serialNumber || '#001'}</span>
+                        <span className={styles.infoValue}>{(toy as any).serialNumber || '#'}</span>
                     </div>
                 </div>
 

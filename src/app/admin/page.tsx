@@ -360,11 +360,12 @@ export default function AdminPage() {
                             <table className={styles.qrTable}>
                                 <thead>
                                     <tr>
-                                        <th>Название</th>
-                                        <th>Номер</th>
-                                        <th>Редкость</th>
-                                        <th>Дата создания</th>
-                                        <th className={styles.stickyCol}>Действия</th>
+                                        <th>{t('model')}</th>
+                                        <th>{t('number')}</th>
+                                        <th>{t('status')}</th>
+                                        <th>{t('rarity')}</th>
+                                        <th>{t('created_at')}</th>
+                                        <th className={styles.stickyCol}>{t('actions')}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -372,6 +373,13 @@ export default function AdminPage() {
                                         <tr key={qr.id}>
                                             <td>{qr.modelName}</td>
                                             <td>#{qr.serialNumber}</td>
+                                            <td>
+                                                {qr.status === 'used' ? (
+                                                    <CheckCircle size={18} color="#22c55e" />
+                                                ) : (
+                                                    <Clock size={18} color="#fbbf24" />
+                                                )}
+                                            </td>
                                             <td>
                                                 <span className={`${styles.qrRarity} ${styles[qr.rarity]}`}>
                                                     {qr.rarity}
