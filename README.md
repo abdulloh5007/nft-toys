@@ -117,3 +117,9 @@ This project is licensed under the Apache License 2.0 — see the [LICENSE](LICE
 <p align="center">
   Made with ❤️ by <a href="https://t.me/yourusername">Your Name</a>
 </p>
+
+
+settings
+who used activasion code
+send nft modal
+tg bot start?activasion_code

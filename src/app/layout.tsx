@@ -1,7 +1,6 @@
 import { cookies } from 'next/headers';
 import type { Metadata } from 'next';
-import { TelegramProvider } from '@/lib/context/TelegramContext';
-import { LanguageProvider } from '@/lib/context/LanguageContext';
+import { ClientProviders } from '@/components/ClientProviders';
 import { Locale } from '@/lib/i18n';
 import './globals.css';
 import Script from 'next/script';
@@ -10,8 +9,6 @@ export const metadata: Metadata = {
     title: 'NFT Toys Platform',
     description: 'Premium NFT Toys Store on Telegram',
 };
-
-import { CookieConsent } from '@/components/layout/CookieConsent';
 
 export default async function RootLayout({
     children,
@@ -24,6 +21,11 @@ export default async function RootLayout({
     return (
         <html lang={locale} suppressHydrationWarning>
             <head>
+                {/* Disable zoom */}
+                <meta
+                    name="viewport"
+                    content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+                />
                 {/* Telegram Web App Script */}
                 <Script
                     src="https://telegram.org/js/telegram-web-app.js"
@@ -31,14 +33,9 @@ export default async function RootLayout({
                 />
             </head>
             <body suppressHydrationWarning>
-                <TelegramProvider>
-                    <LanguageProvider initialLocale={locale}>
-                        <main className="app-container">
-                            {children}
-                        </main>
-                        {/* <CookieConsent /> */}
-                    </LanguageProvider>
-                </TelegramProvider>
+                <ClientProviders initialLocale={locale}>
+                    {children}
+                </ClientProviders>
             </body>
         </html>
     );

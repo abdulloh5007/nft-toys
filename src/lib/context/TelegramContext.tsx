@@ -11,7 +11,23 @@ interface TelegramContextType {
     firebaseUser: User | null;
     ready: boolean;
     isAuthenticated: boolean;
+    // Haptic feedback helpers
+    haptic: {
+        impact: (style?: 'light' | 'medium' | 'heavy' | 'rigid' | 'soft') => void;
+        success: () => void;
+        error: () => void;
+        warning: () => void;
+        selection: () => void;
+    };
 }
+
+const noopHaptic = {
+    impact: () => { },
+    success: () => { },
+    error: () => { },
+    warning: () => { },
+    selection: () => { },
+};
 
 const TelegramContext = createContext<TelegramContextType>({
     webApp: null,
@@ -19,6 +35,7 @@ const TelegramContext = createContext<TelegramContextType>({
     firebaseUser: null,
     ready: false,
     isAuthenticated: false,
+    haptic: noopHaptic,
 });
 
 export const useTelegram = () => useContext(TelegramContext);
@@ -43,6 +60,17 @@ export const TelegramProvider = ({ children }: { children: React.ReactNode }) =>
         if (app) {
             app.ready();
             app.expand();
+
+            // Disable swipe-to-close gesture
+            if (typeof app.disableVerticalSwipes === 'function') {
+                app.disableVerticalSwipes();
+            }
+
+            // Enable closing confirmation dialog
+            if (typeof app.enableClosingConfirmation === 'function') {
+                app.enableClosingConfirmation();
+            }
+
             setWebApp(app);
             setReady(true);
 
@@ -52,8 +80,18 @@ export const TelegramProvider = ({ children }: { children: React.ReactNode }) =>
             document.documentElement.style.setProperty('--tg-theme-button-color', app.themeParams.button_color || '#3390ec');
             document.documentElement.style.setProperty('--tg-theme-button-text-color', app.themeParams.button_text_color || '#ffffff');
             document.documentElement.style.setProperty('--tg-theme-secondary-bg-color', app.themeParams.secondary_bg_color || '#1E1E1E');
+
+            // Handle startapp deeplink parameter
+            const startParam = app.initDataUnsafe?.start_param;
+            if (startParam && startParam.startsWith('activate_')) {
+                const token = startParam.replace('activate_', '');
+                window.location.href = `/activate/${encodeURIComponent(token)}`;
+            }
         }
     }, []);
+
+    // State for extended user info (including wallet)
+    const [extendedUser, setExtendedUser] = useState<any>(null);
 
     // Authenticate with Firebase when Telegram is ready
     useEffect(() => {
@@ -72,6 +110,14 @@ export const TelegramProvider = ({ children }: { children: React.ReactNode }) =>
                 if (response.ok) {
                     const data = await response.json();
                     await signInWithCustomToken(auth, data.token);
+
+                    // Store extended user info with wallet
+                    setExtendedUser({
+                        ...webApp.initDataUnsafe?.user,
+                        walletAddress: data.user.walletAddress,
+                        walletFriendly: data.user.walletFriendly,
+                    });
+
                     console.log('✅ Firebase auth successful');
                 } else {
                     console.warn('⚠️ Auth failed:', await response.text());
@@ -84,12 +130,32 @@ export const TelegramProvider = ({ children }: { children: React.ReactNode }) =>
         authenticateWithFirebase();
     }, [webApp, authAttempted, firebaseUser]);
 
+    // Haptic feedback helpers
+    const haptic = React.useMemo(() => ({
+        impact: (style: 'light' | 'medium' | 'heavy' | 'rigid' | 'soft' = 'medium') => {
+            webApp?.HapticFeedback?.impactOccurred(style);
+        },
+        success: () => {
+            webApp?.HapticFeedback?.notificationOccurred('success');
+        },
+        error: () => {
+            webApp?.HapticFeedback?.notificationOccurred('error');
+        },
+        warning: () => {
+            webApp?.HapticFeedback?.notificationOccurred('warning');
+        },
+        selection: () => {
+            webApp?.HapticFeedback?.selectionChanged();
+        },
+    }), [webApp]);
+
     const value = {
         webApp,
-        user: webApp?.initDataUnsafe?.user,
+        user: extendedUser || webApp?.initDataUnsafe?.user,
         firebaseUser,
         ready,
         isAuthenticated: !!firebaseUser,
+        haptic,
     };
 
     return (

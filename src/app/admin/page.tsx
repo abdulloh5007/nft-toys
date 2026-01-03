@@ -2,13 +2,18 @@
 
 import React, { useState, useEffect } from 'react';
 import QRCode from 'react-qr-code';
-import { Header } from '@/components/layout/Header';
+
 import { Navigation } from '@/components/layout/Navigation';
 import { Button } from '@/components/ui/Button';
 import { PEPE_MODELS } from '@/lib/data/pepe_models';
 import { useLanguage } from '@/lib/context/LanguageContext';
-import { QrCode, Plus, CheckCircle, Clock, ArrowLeft, Eye, X, AlertTriangle, Trash2, ChevronDown } from 'lucide-react';
+import { useTelegram } from '@/lib/context/TelegramContext';
+import { QrCode, Plus, CheckCircle, Clock, Eye, X, AlertTriangle, Trash2, ChevronDown, Lock } from 'lucide-react';
+import { TelegramBackButton } from '@/components/ui/TelegramBackButton';
 import styles from './page.module.css';
+
+// Admin whitelist - Telegram IDs allowed to access admin
+const ADMIN_IDS = process.env.NEXT_PUBLIC_ADMIN_IDS?.split(',') || [];
 
 interface CustomSelectProps {
     value: string;
@@ -82,6 +87,7 @@ interface QRCodeData {
 
 export default function AdminPage() {
     const { t } = useLanguage();
+    const { user, isAuthenticated, ready } = useTelegram();
     const [selectedModel, setSelectedModel] = useState<string>('');
     const [selectedRarity, setSelectedRarity] = useState<string>(''); // Add rarity state
     const [serialNumber, setSerialNumber] = useState<string>('');
@@ -94,6 +100,10 @@ export default function AdminPage() {
     const [error, setError] = useState<string>('');
     const [lastCreatedUrl, setLastCreatedUrl] = useState<string>('');
     const [validationErrors, setValidationErrors] = useState({ rarity: false, model: false, serial: false });
+    const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+
+    // Check admin access
+    const isAdmin = user?.id && ADMIN_IDS.includes(String(user.id));
 
     const selectedModelData = PEPE_MODELS.find(m => m.name === selectedModel);
 
@@ -101,10 +111,25 @@ export default function AdminPage() {
         return PEPE_MODELS.find(m => m.name === modelName)?.rarity || 'common';
     };
 
-    // Load data on mount
+    // Wait for auth to complete before checking admin
     useEffect(() => {
-        loadData();
-    }, []);
+        if (ready) {
+            // Give a small delay for user data to be available
+            const timer = setTimeout(() => {
+                setIsCheckingAuth(false);
+            }, 500);
+            return () => clearTimeout(timer);
+        }
+    }, [ready]);
+
+    // Load data on mount (only if admin)
+    useEffect(() => {
+        if (!isCheckingAuth && isAdmin) {
+            loadData();
+        } else if (!isCheckingAuth) {
+            setIsLoadingList(false);
+        }
+    }, [isAdmin, isCheckingAuth]);
 
     const loadData = async () => {
         setIsLoadingList(true);
@@ -224,17 +249,33 @@ export default function AdminPage() {
         }
     };
 
+    // Show loading while checking auth - prevents content flash
+    if (isCheckingAuth) {
+        return (
+            <div className={styles.container}>
+                <main className={styles.main}>
+                    <div className={styles.loadingState}>
+                        <div className={styles.spinner}></div>
+                    </div>
+                </main>
+                <Navigation />
+            </div>
+        );
+    }
+
+    // Redirect non-admins to 404 - don't reveal admin panel exists
+    if (!isAdmin) {
+        if (typeof window !== 'undefined') {
+            window.location.href = '/404';
+        }
+        return null;
+    }
+
     return (
         <div className={styles.container}>
-            <Header />
+            <TelegramBackButton href="/profile" />
 
             <main className={styles.main}>
-                <div className={styles.header}>
-                    <button className={styles.backBtn} onClick={() => window.location.href = '/profile'}>
-                        <ArrowLeft size={20} />
-                    </button>
-                    <h1>{t('admin_panel')}</h1>
-                </div>
 
                 {/* Stats */}
                 <div className={styles.statsGrid}>
@@ -460,26 +501,27 @@ export default function AdminPage() {
                                 <Trash2 size={28} />
                             </div>
                             <p>
-                                <strong>{deletingQR.modelName} #{deletingQR.serialNumber}</strong> o'chirilsinmi?
+                                <strong>{deletingQR.modelName} #{deletingQR.serialNumber}</strong> — {t('delete_confirm')}
                             </p>
                             <div className={styles.deleteActions}>
                                 <button
                                     className={styles.cancelBtn}
                                     onClick={() => setDeletingQR(null)}
                                 >
-                                    Нет
+                                    {t('no')}
                                 </button>
                                 <button
                                     className={styles.confirmDeleteBtn}
                                     onClick={confirmDelete}
                                 >
-                                    Да
+                                    {t('yes')}
                                 </button>
                             </div>
                         </div>
                     </div>
-                )
-            }
-        </div >
+                )}
+
+            <Navigation />
+        </div>
     );
 }

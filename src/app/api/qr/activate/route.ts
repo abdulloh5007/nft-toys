@@ -41,7 +41,7 @@ function verifyToken(token: string): { valid: boolean; nfcId?: string } {
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
-        const { token, userId } = body;
+        const { token, userId, username } = body;
 
         // Validate input
         if (!token) {
@@ -84,7 +84,8 @@ export async function POST(request: NextRequest) {
                 usedAt: qrData.usedAt?.seconds
                     ? new Date(qrData.usedAt.seconds * 1000).toISOString()
                     : null,
-                usedBy: qrData.usedBy
+                usedBy: qrData.usedBy,
+                usedByName: qrData.usedByName || null
             }, { status: 409 });
         }
 
@@ -93,7 +94,89 @@ export async function POST(request: NextRequest) {
             status: 'used',
             usedAt: serverTimestamp(),
             usedBy: userId || 'anonymous',
+            usedByName: username || null,
         });
+
+        // ===== MINT NFT =====
+        const { generateTokenId, generateContractAddress, signTransaction, generateTxHash } =
+            await import('@/lib/utils/crypto');
+        const { collection, addDoc, setDoc, arrayUnion } = await import('firebase/firestore');
+
+        // Get user's wallet
+        let userWallet = null;
+        if (userId) {
+            const userRef = doc(db, 'users', userId);
+            const userSnap = await getDoc(userRef);
+            if (userSnap.exists()) {
+                userWallet = userSnap.data().walletAddress;
+            }
+        }
+
+        // Generate NFT token
+        const tokenId = generateTokenId(qrData.modelName, qrData.serialNumber);
+        const contractAddress = generateContractAddress(tokenId);
+        const mintTimestamp = Date.now();
+
+        // Create NFT document
+        const nftRef = doc(db, 'nfts', tokenId);
+        await setDoc(nftRef, {
+            tokenId,
+            contractAddress,
+            ownerWallet: userWallet,
+            ownerId: userId || null,
+            modelName: qrData.modelName,
+            serialNumber: qrData.serialNumber,
+            rarity: qrData.rarity,
+            tgsFile: qrData.tgsFile,
+            qrCodeId: nfcId,
+            mintedAt: serverTimestamp(),
+            status: 'minted',
+            metadata: {
+                name: `${qrData.modelName} #${qrData.serialNumber}`,
+                description: `NFT Toy - ${qrData.modelName} (${qrData.rarity})`,
+                image: `/models/${qrData.tgsFile}`,
+            },
+            // Owner history for tracking all transfers
+            ownerHistory: [{
+                wallet: userWallet,
+                userId: userId || null,
+                type: 'mint',
+                timestamp: mintTimestamp,
+            }],
+        });
+
+        // Create mint transaction
+        const txData = {
+            type: 'mint' as const,
+            from: null,
+            to: userWallet || 'anonymous',
+            tokenId,
+            timestamp: mintTimestamp,
+        };
+        const txSignature = signTransaction(txData, TOKEN_SECRET);
+        const txHash = generateTxHash('mint', null, userWallet || 'anonymous', tokenId, mintTimestamp);
+
+        await addDoc(collection(db, 'transactions'), {
+            txHash,
+            type: 'mint',
+            from: null,
+            to: userWallet,
+            toUserId: userId || null,
+            tokenId,
+            modelName: qrData.modelName,
+            serialNumber: qrData.serialNumber,
+            signature: txSignature,
+            timestamp: serverTimestamp(),
+            status: 'confirmed',
+        });
+
+        // Add NFT to user's wallet
+        if (userWallet) {
+            const walletRef = doc(db, 'wallets', userWallet);
+            await updateDoc(walletRef, {
+                nfts: arrayUnion(tokenId),
+            });
+        }
 
         // Get model data
         const model = PEPE_MODELS.find(m => m.name === qrData.modelName);
@@ -107,6 +190,12 @@ export async function POST(request: NextRequest) {
                 rarity: qrData.rarity,
                 tgsFile: qrData.tgsFile,
                 tgsUrl: `/models/${qrData.tgsFile}`,
+            },
+            nft: {
+                tokenId,
+                contractAddress,
+                ownerWallet: userWallet,
+                txHash,
             },
             activatedAt: new Date().toISOString(),
         });

@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { Header } from '@/components/layout/Header';
+
 import { Navigation } from '@/components/layout/Navigation';
 import { Button } from '@/components/ui/Button';
 import { useLanguage } from '@/lib/context/LanguageContext';
@@ -19,24 +19,37 @@ export default function ScanPage() {
 
     const handleScan = (text: string) => {
         if (text && !isLoading) {
-            // Simple parsing to handle full URLs if scanned
-            const parts = text.split('/');
-            const scannedId = parts[parts.length - 1];
+            setIsLoading(true);
+            setIsScanning(false);
 
-            setIsLoading(true); // Show loading
-            setIsScanning(false); // Stop camera
+            // Parse scanned URL/text
+            let redirectUrl = '';
+
+            try {
+                // Check if it's a full URL
+                if (text.startsWith('http://') || text.startsWith('https://')) {
+                    const url = new URL(text);
+                    // Use the pathname directly (e.g., /activate/token...)
+                    redirectUrl = url.pathname;
+                } else if (text.startsWith('/')) {
+                    // Already a path
+                    redirectUrl = text;
+                } else {
+                    // Just a token - assume it's for /activate/
+                    redirectUrl = `/activate/${encodeURIComponent(text)}`;
+                }
+            } catch {
+                // If URL parsing fails, treat as token
+                const parts = text.split('/');
+                const token = parts[parts.length - 1];
+                redirectUrl = `/activate/${encodeURIComponent(token)}`;
+            }
 
             // Small delay to show the loading state before redirect
             setTimeout(() => {
-                router.push(`/scan/${scannedId}`);
+                router.push(redirectUrl);
             }, 500);
         }
-    };
-
-    const handleSimulateScan = () => {
-        // Navigate to a mock scan result
-        const mockNfcId = 'nfc_raphael'; // Use a real one from our data
-        router.push(`/scan/${mockNfcId}`);
     };
 
     // Auto-start scanning when page loads

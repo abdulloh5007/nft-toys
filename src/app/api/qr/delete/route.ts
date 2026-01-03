@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/firebase/config';
 import { doc, deleteDoc, getDoc } from 'firebase/firestore';
+import { validateOrigin } from '@/lib/middleware/csrfProtection';
 
 export async function DELETE(request: NextRequest) {
+    // CSRF Protection: validate Origin
+    const originError = validateOrigin(request);
+    if (originError) return originError;
+
     try {
         const { searchParams } = new URL(request.url);
         const nfcId = searchParams.get('nfcId');

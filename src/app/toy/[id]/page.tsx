@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Header } from '@/components/layout/Header';
+
 import { Navigation } from '@/components/layout/Navigation';
 import { Button } from '@/components/ui/Button';
 import { TransferModal } from '@/components/features/TransferModal';

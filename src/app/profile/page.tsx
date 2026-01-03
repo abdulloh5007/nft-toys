@@ -1,23 +1,35 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Header } from '@/components/layout/Header';
 import { Navigation } from '@/components/layout/Navigation';
-import { ToyCard } from '@/components/features/ToyCard';
 import { TransferModal } from '@/components/features/TransferModal';
+import { SettingsDrawer } from '@/components/features/SettingsDrawer';
 import { Button } from '@/components/ui/Button';
+import { TgsPlayer } from '@/components/ui/TgsPlayer';
 import { useLanguage } from '@/lib/context/LanguageContext';
 import { useTelegram } from '@/lib/context/TelegramContext';
-import { mockToys, Toy } from '@/lib/mock/toys';
 import { getQRCodeStats } from '@/lib/firebase/firestore';
-import { Lock, User, Wallet, QrCode, Plus, CheckCircle, Clock } from 'lucide-react';
+import { Lock, User, Wallet, QrCode, Plus, CheckCircle, Clock, Copy, Check, Settings } from 'lucide-react';
 import styles from './page.module.css';
+
+interface NFTItem {
+    tokenId: string;
+    modelName: string;
+    serialNumber: number;
+    rarity: string;
+    tgsFile: string;
+    tgsUrl: string;
+}
 
 export default function ProfilePage() {
     const { t } = useLanguage();
-    const { user } = useTelegram();
-    const [selectedToy, setSelectedToy] = useState<Toy | null>(null);
+    const { user, firebaseUser, haptic } = useTelegram();
+    const [selectedNFT, setSelectedNFT] = useState<NFTItem | null>(null);
     const [stats, setStats] = useState({ total: 0, used: 0, created: 0 });
+    const [myNFTs, setMyNFTs] = useState<NFTItem[]>([]);
+    const [isLoadingNFTs, setIsLoadingNFTs] = useState(true);
+    const [copied, setCopied] = useState(false);
+    const [settingsOpen, setSettingsOpen] = useState(false);
 
     // Load QR stats
     useEffect(() => {
@@ -32,18 +44,36 @@ export default function ProfilePage() {
         loadStats();
     }, []);
 
-    // Filter toys owned by this user (if logged in)
-    const userId = user?.id;
-    const myToys = userId ? mockToys.filter(toy => toy.ownerId === userId) : [];
+    // Load user's NFTs
+    useEffect(() => {
+        const loadNFTs = async () => {
+            // Wait for firebase user before loading
+            if (!firebaseUser?.uid) {
+                return; // Keep showing skeleton until user is ready
+            }
 
-    const handleTransfer = (toy: Toy) => {
-        setSelectedToy(toy);
+            try {
+                const response = await fetch(`/api/nft/my?userId=${firebaseUser.uid}`);
+                const data = await response.json();
+                if (data.success) {
+                    setMyNFTs(data.nfts || []);
+                }
+            } catch (error) {
+                console.error('Error loading NFTs:', error);
+            } finally {
+                setIsLoadingNFTs(false);
+            }
+        };
+        loadNFTs();
+    }, [firebaseUser]);
+
+    const handleTransfer = (nft: NFTItem) => {
+        setSelectedNFT(nft);
     };
 
     if (!user) {
         return (
             <div className={styles.container}>
-                <Header />
                 <main className={styles.main}>
                     <div className={styles.loginCard}>
                         <div className={styles.loginIcon}>
@@ -79,9 +109,19 @@ export default function ProfilePage() {
 
     return (
         <div className={styles.container}>
-            <Header />
+            {/* Settings button - top right */}
+            <button
+                className={styles.settingsBtn}
+                onClick={() => {
+                    haptic.impact('light');
+                    setSettingsOpen(true);
+                }}
+            >
+                <Settings size={22} />
+            </button>
 
             <main className={styles.main}>
+                {/* Profile Header - centered */}
                 <div className={styles.profileHeader}>
                     <div className={styles.avatar}>
                         {user.photo_url ? (
@@ -94,30 +134,45 @@ export default function ProfilePage() {
                             user.first_name?.[0] || <User size={32} />
                         )}
                     </div>
-                    <div className={styles.userInfo}>
-                        <h2 className={styles.userName}>
-                            {`${user.first_name} ${user.last_name || ''}`}
-                        </h2>
-                        <span className={styles.userId}>ID: {user.id}</span>
-                    </div>
+                    <span className={styles.username}>
+                        {user.username ? `@${user.username}` : `${user.first_name} ${user.last_name || ''}`}
+                    </span>
                 </div>
 
                 <div className={styles.walletSection}>
-                    <div className={styles.balance}>
-                        <span className={styles.label}>Balance</span>
-                        <div className={styles.amountWrapper}>
-                            <Wallet size={18} className={styles.walletIcon} />
-                            <span className={styles.amount}>12,500,000 UZS</span>
+                    <div className={styles.walletLeft}>
+                        <div className={styles.walletIconBox}>
+                            <Wallet size={20} />
+                        </div>
+                        <div className={styles.walletInfo}>
+                            <span className={styles.walletLabel}>{t('wallet')}</span>
+                            <span className={styles.walletAddress}>
+                                {user.walletFriendly
+                                    ? `${user.walletFriendly.slice(0, 8)}...${user.walletFriendly.slice(-4)}`
+                                    : t('loading')}
+                            </span>
                         </div>
                     </div>
-                    <Button variant="secondary" size="sm">{t('connect')}</Button>
+                    {user.walletFriendly && (
+                        <button
+                            className={`${styles.copyBtn} ${copied ? styles.copied : ''}`}
+                            onClick={() => {
+                                navigator.clipboard.writeText(user.walletFriendly);
+                                haptic.success();
+                                setCopied(true);
+                                setTimeout(() => setCopied(false), 2000);
+                            }}
+                        >
+                            {copied ? <Check size={20} /> : <Copy size={20} />}
+                        </button>
+                    )}
                 </div>
 
                 {/* Admin Panel */}
                 <section className={styles.adminSection}>
                     <h3 className={styles.sectionTitle}>
                         <QrCode size={20} />
-                        Admin Panel
+                        {t('admin_panel')}
                     </h3>
 
                     <div className={styles.statsGrid}>
@@ -127,7 +182,7 @@ export default function ProfilePage() {
                             </div>
                             <div className={styles.statInfo}>
                                 <span className={styles.statValue}>{stats.total}</span>
-                                <span className={styles.statLabel}>Jami QR</span>
+                                <span className={styles.statLabel}>{t('total_qr')}</span>
                             </div>
                         </div>
                         <div className={styles.statCard}>
@@ -136,7 +191,7 @@ export default function ProfilePage() {
                             </div>
                             <div className={styles.statInfo}>
                                 <span className={styles.statValue}>{stats.created}</span>
-                                <span className={styles.statLabel}>Kutilmoqda</span>
+                                <span className={styles.statLabel}>{t('waiting')}</span>
                             </div>
                         </div>
                         <div className={styles.statCard}>
@@ -145,7 +200,7 @@ export default function ProfilePage() {
                             </div>
                             <div className={styles.statInfo}>
                                 <span className={styles.statValue}>{stats.used}</span>
-                                <span className={styles.statLabel}>Ishlatilgan</span>
+                                <span className={styles.statLabel}>{t('used')}</span>
                             </div>
                         </div>
                     </div>
@@ -157,27 +212,41 @@ export default function ProfilePage() {
                         className={styles.createBtn}
                     >
                         <Plus size={18} />
-                        Yangi QR Kod yaratish
+                        {t('create_new_qr')}
                     </Button>
                 </section>
 
                 <section className={styles.collection}>
-                    <h3 className={styles.sectionTitle}>My Collection ({myToys.length})</h3>
-                    {myToys.length > 0 ? (
-                        <div className={styles.grid}>
-                            {myToys.map(toy => (
-                                <ToyCard
-                                    key={toy.id}
-                                    toy={toy}
-                                    isOwner={true}
-                                    onTransfer={handleTransfer}
-                                />
+                    <h3 className={styles.sectionTitle}>{t('my_collection')}</h3>
+                    {isLoadingNFTs ? (
+                        <div className={`${styles.grid} ${styles.grid3}`}>
+                            {[1, 2, 3].map(i => (
+                                <div key={i} className={`${styles.nftCard} ${styles.skeleton}`}></div>
+                            ))}
+                        </div>
+                    ) : myNFTs.length > 0 ? (
+                        <div className={`${styles.grid} ${myNFTs.length === 1 ? styles.grid1 : myNFTs.length === 2 ? styles.grid2 : styles.grid3}`}>
+                            {myNFTs.map(nft => (
+                                <div
+                                    key={nft.tokenId}
+                                    className={styles.nftCard}
+                                    onClick={() => handleTransfer(nft)}
+                                >
+                                    <div className={styles.ribbon} data-serial={`#${nft.serialNumber}`}></div>
+                                    <div className={styles.nftImage}>
+                                        <TgsPlayer
+                                            src={nft.tgsUrl}
+                                            style={{ width: '100%', height: '100%' }}
+                                            autoplay
+                                        />
+                                    </div>
+                                </div>
                             ))}
                         </div>
                     ) : (
                         <div className={styles.empty}>
-                            <p>You don't own any toys yet.</p>
-                            <Button onClick={() => window.location.href = '/'} variant="ghost">Browse Store</Button>
+                            <p>{t('no_nft')}</p>
+                            <p className={styles.emptyHint}>{t('scan_to_activate')}</p>
                         </div>
                     )}
                 </section>
@@ -185,15 +254,29 @@ export default function ProfilePage() {
 
             <Navigation />
 
-            {selectedToy && (
+            {selectedNFT && (
                 <TransferModal
-                    isOpen={!!selectedToy}
-                    onClose={() => setSelectedToy(null)}
-                    toy={selectedToy}
+                    isOpen={!!selectedNFT}
+                    onClose={() => setSelectedNFT(null)}
+                    nft={selectedNFT}
+                    onSuccess={() => {
+                        setSelectedNFT(null);
+                        // Reload NFTs after successful transfer
+                        if (firebaseUser?.uid) {
+                            fetch(`/api/nft/my?userId=${firebaseUser.uid}`)
+                                .then(res => res.json())
+                                .then(data => {
+                                    if (data.success) setMyNFTs(data.nfts || []);
+                                });
+                        }
+                    }}
                 />
             )}
 
-
+            <SettingsDrawer
+                isOpen={settingsOpen}
+                onClose={() => setSettingsOpen(false)}
+            />
         </div>
     );
 }

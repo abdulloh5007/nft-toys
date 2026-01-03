@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import confetti from 'canvas-confetti';
 import { useParams, useRouter } from 'next/navigation';
-import { Header } from '@/components/layout/Header';
+
 import { Navigation } from '@/components/layout/Navigation';
 import { Button } from '@/components/ui/Button';
 import { useLanguage } from '@/lib/context/LanguageContext';
@@ -30,10 +30,11 @@ export default function ActivatePage() {
     const params = useParams();
     const router = useRouter();
     const { t } = useLanguage();
-    const { user } = useTelegram();
+    const { user, haptic, firebaseUser } = useTelegram();
     const [toy, setToy] = useState<ToyData | null>(null);
     const [status, setStatus] = useState<PageStatus>('loading');
     const [activationTime, setActivationTime] = useState<string | null>(null);
+    const [activatedBy, setActivatedBy] = useState<string | null>(null);
     const [errorMessage, setErrorMessage] = useState<string>('');
 
     useEffect(() => {
@@ -73,6 +74,7 @@ export default function ActivatePage() {
                         ? new Date(data.usedAt).toLocaleString('ru-RU')
                         : ''
                     );
+                    setActivatedBy(data.usedByName || null);
                     return;
                 }
 
@@ -98,8 +100,37 @@ export default function ActivatePage() {
         checkQRCode();
     }, [params.token]);
 
+    // Handler for home button - redirects to Telegram if not authenticated
+    const handleHomeClick = () => {
+        haptic.impact('light');
+        if (!user) {
+            // User is not authenticated - redirect to Telegram bot
+            const rawToken = params.token as string;
+            const botUsername = process.env.NEXT_PUBLIC_BOT_USERNAME || 'nfttoysbot';
+            const startParam = encodeURIComponent(`activate_${rawToken}`);
+            const telegramUrl = `https://t.me/${botUsername}?startapp=${startParam}`;
+            window.location.href = telegramUrl;
+        } else {
+            router.push('/');
+        }
+    };
+
     const handleActivate = async () => {
         if (!toy) return;
+
+        // Haptic feedback on button press
+        haptic.impact('heavy');
+
+        // Check if user is authenticated (came from Telegram)
+        if (!user) {
+            // User is not authenticated - redirect to Telegram bot with deeplink
+            const rawToken = params.token as string;
+            const botUsername = process.env.NEXT_PUBLIC_BOT_USERNAME || 'nfttoysbot';
+            const startParam = encodeURIComponent(`activate_${rawToken}`);
+            const telegramUrl = `https://t.me/${botUsername}?startapp=${startParam}`;
+            window.location.href = telegramUrl;
+            return;
+        }
 
         setStatus('loading');
 
@@ -115,7 +146,8 @@ export default function ActivatePage() {
                 },
                 body: JSON.stringify({
                     token,
-                    userId: user?.id?.toString() || 'anonymous',
+                    userId: firebaseUser?.uid || `tg_${user?.id}` || 'anonymous',
+                    username: user?.username || user?.first_name || null,
                 }),
             });
 
@@ -148,6 +180,9 @@ export default function ActivatePage() {
                 minute: '2-digit'
             }));
             setStatus('activated_success');
+
+            // Success haptic feedback
+            haptic.success();
         } catch (error) {
             console.error('Activation error:', error);
             // Show error status
@@ -202,12 +237,17 @@ export default function ActivatePage() {
                 <div className={styles.errorContainer}>
                     <AlertTriangle size={64} className={styles.warningIcon} />
                     <h3 className={styles.warningTitle}>{t('already_activated') || 'Already Activated'}</h3>
+                    {activatedBy && (
+                        <div className={styles.activatedByBadge}>
+                            <span>{t('activated_by') || 'Activated by'}: @{activatedBy}</span>
+                        </div>
+                    )}
                     {activationTime && (
                         <div className={styles.timeBadge}>
                             <span>{t('time') || 'Time'}: {activationTime}</span>
                         </div>
                     )}
-                    <Button onClick={() => router.push('/')} variant="secondary" fullWidth className={styles.homeBtn}>
+                    <Button onClick={handleHomeClick} variant="secondary" fullWidth className={styles.homeBtn}>
                         <Home size={18} />
                         {t('home') || 'Home'}
                     </Button>
@@ -232,7 +272,10 @@ export default function ActivatePage() {
                         <span>{t('time') || 'Time'}: {activationTime}</span>
                     </div>
 
-                    <Button onClick={() => router.push('/profile')} variant="primary" fullWidth className={styles.mt4}>
+                    <Button onClick={() => {
+                        haptic.impact('light');
+                        router.push('/profile');
+                    }} variant="primary" fullWidth className={styles.mt4}>
                         OK
                     </Button>
                 </div>
@@ -284,11 +327,10 @@ export default function ActivatePage() {
 
     return (
         <div className={styles.container}>
-            <Header />
             <main className={styles.main}>
                 {renderContent()}
             </main>
-            <Navigation />
+            {user && <Navigation />}
         </div>
     );
 }

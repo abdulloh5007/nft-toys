@@ -6,8 +6,7 @@
 }
 
 .main {
-    padding: 80px 16px 20px;
-    /* Top padding for header */
+    padding: 20px 16px;
     max-width: 800px;
     margin: 0 auto;
 }
@@ -49,4 +48,65 @@
         opacity: 1;
         transform: translateY(0);
     }
+}
+
+/* Model Cards */
+.modelCard {
+    background: var(--bg-secondary);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.2s ease;
+}
+
+.modelCard:hover {
+    transform: translateY(-2px);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.modelImage {
+    width: 100px;
+    height: 100px;
+}
+
+.modelInfo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    width: 100%;
+}
+
+.modelName {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    text-align: center;
+}
+
+.modelRarity {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+
+.legendary {
+    background: rgba(251, 191, 36, 0.2);
+    color: #fbbf24;
+}
+
+.rare {
+    background: rgba(59, 130, 246, 0.2);
+    color: #3b82f6;
+}
+
+.common {
+    background: rgba(156, 163, 175, 0.2);
+    color: #9ca3af;
 }

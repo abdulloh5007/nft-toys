@@ -12,31 +12,28 @@ const NFT_PREFIX = 'NFT';
 /**
  * Generate a new wallet address
  * Format: 0nt{64 hex chars}
+ * Note: This is a custodial system - no private keys needed.
+ * All transactions are signed server-side with TOKEN_SECRET.
  */
 export function generateWalletAddress(): {
     address: string;
-    privateKey: string;
-    publicKey: string;
+    addressHash: string;
 } {
-    // Generate ECDSA keypair
-    const { privateKey, publicKey } = crypto.generateKeyPairSync('ec', {
-        namedCurve: 'secp256k1',
-        privateKeyEncoding: { type: 'pkcs8', format: 'der' },
-        publicKeyEncoding: { type: 'spki', format: 'der' }
-    });
+    // Generate random bytes for unique address
+    const randomBytes = crypto.randomBytes(32);
+    const timestamp = Date.now().toString();
 
-    // Create address from public key hash
-    const publicKeyHash = crypto
+    // Create address hash from random bytes + timestamp
+    const addressHash = crypto
         .createHash('sha256')
-        .update(publicKey)
+        .update(Buffer.concat([randomBytes, Buffer.from(timestamp)]))
         .digest('hex');
 
-    const address = `${ADDRESS_PREFIX}${publicKeyHash}`;
+    const address = `${ADDRESS_PREFIX}${addressHash}`;
 
     return {
         address,
-        privateKey: privateKey.toString('hex'),
-        publicKey: publicKey.toString('hex'),
+        addressHash, // Can be used for additional verification
     };
 }
 

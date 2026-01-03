@@ -62,9 +62,24 @@ export interface IWebApp {
     notificationOccurred: (type: 'error' | 'success' | 'warning') => void;
     selectionChanged: VoidFunction;
   };
+  CloudStorage: {
+    setItem: (key: string, value: string, callback?: (error: Error | null, success?: boolean) => void) => void;
+    getItem: (key: string, callback: (error: Error | null, value?: string) => void) => void;
+    getItems: (keys: string[], callback: (error: Error | null, values?: Record<string, string>) => void) => void;
+    removeItem: (key: string, callback?: (error: Error | null, success?: boolean) => void) => void;
+    removeItems: (keys: string[], callback?: (error: Error | null, success?: boolean) => void) => void;
+    getKeys: (callback: (error: Error | null, keys?: string[]) => void) => void;
+  };
   close: VoidFunction;
   expand: VoidFunction;
   ready: VoidFunction;
+  // Swipe and closing controls
+  disableVerticalSwipes: VoidFunction;
+  enableVerticalSwipes: VoidFunction;
+  isVerticalSwipesEnabled: boolean;
+  enableClosingConfirmation: VoidFunction;
+  disableClosingConfirmation: VoidFunction;
+  showConfirm: (message: string, callback: (confirmed: boolean) => void) => void;
 }
 
 const mockWebApp: IWebApp = {
@@ -101,10 +116,10 @@ const mockWebApp: IWebApp = {
   backgroundColor: '#121212',
   BackButton: {
     isVisible: false,
-    onClick: () => {},
-    offClick: () => {},
-    show: () => {},
-    hide: () => {},
+    onClick: () => { },
+    offClick: () => { },
+    show: () => { },
+    hide: () => { },
   },
   MainButton: {
     text: 'CONTINUE',
@@ -113,25 +128,66 @@ const mockWebApp: IWebApp = {
     isVisible: false,
     isActive: true,
     isProgressVisible: false,
-    setText: () => {},
-    onClick: () => {},
-    offClick: () => {},
-    show: () => {},
-    hide: () => {},
-    enable: () => {},
-    disable: () => {},
-    showProgress: () => {},
-    hideProgress: () => {},
-    setParams: () => {},
+    setText: () => { },
+    onClick: () => { },
+    offClick: () => { },
+    show: () => { },
+    hide: () => { },
+    enable: () => { },
+    disable: () => { },
+    showProgress: () => { },
+    hideProgress: () => { },
+    setParams: () => { },
   },
   HapticFeedback: {
     impactOccurred: () => console.log('[Mock] Haptic Impact'),
     notificationOccurred: () => console.log('[Mock] Haptic Notification'),
     selectionChanged: () => console.log('[Mock] Haptic Selection'),
   },
+  CloudStorage: {
+    setItem: (key: string, value: string, cb?: (err: Error | null, success?: boolean) => void) => {
+      localStorage.setItem(`tg_cloud_${key}`, value);
+      if (cb) cb(null, true);
+    },
+    getItem: (key: string, cb: (err: Error | null, value?: string) => void) => {
+      const value = localStorage.getItem(`tg_cloud_${key}`);
+      cb(null, value || undefined);
+    },
+    getItems: (keys: string[], cb: (err: Error | null, values?: Record<string, string>) => void) => {
+      const values: Record<string, string> = {};
+      keys.forEach(k => {
+        const v = localStorage.getItem(`tg_cloud_${k}`);
+        if (v) values[k] = v;
+      });
+      cb(null, values);
+    },
+    removeItem: (key: string, cb?: (err: Error | null, success?: boolean) => void) => {
+      localStorage.removeItem(`tg_cloud_${key}`);
+      if (cb) cb(null, true);
+    },
+    removeItems: (keys: string[], cb?: (err: Error | null, success?: boolean) => void) => {
+      keys.forEach(k => localStorage.removeItem(`tg_cloud_${k}`));
+      if (cb) cb(null, true);
+    },
+    getKeys: (cb: (err: Error | null, keys?: string[]) => void) => {
+      const keys = Object.keys(localStorage)
+        .filter(k => k.startsWith('tg_cloud_'))
+        .map(k => k.replace('tg_cloud_', ''));
+      cb(null, keys);
+    },
+  },
   close: () => console.log('[Mock] Close WebApp'),
   expand: () => console.log('[Mock] Expand WebApp'),
   ready: () => console.log('[Mock] WebApp Ready'),
+  disableVerticalSwipes: () => console.log('[Mock] Disable Vertical Swipes'),
+  enableVerticalSwipes: () => console.log('[Mock] Enable Vertical Swipes'),
+  isVerticalSwipesEnabled: true,
+  enableClosingConfirmation: () => console.log('[Mock] Enable Closing Confirmation'),
+  disableClosingConfirmation: () => console.log('[Mock] Disable Closing Confirmation'),
+  showConfirm: (msg: string, cb: (confirmed: boolean) => void) => {
+    console.log('[Mock] Show Confirm:', msg);
+    cb(true);
+  },
 };
 
 export const getTelegramWebApp = (): IWebApp | null => {

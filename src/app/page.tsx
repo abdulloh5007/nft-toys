@@ -1,10 +1,10 @@
 'use client';
 
 import React from 'react';
-import { Header } from '@/components/layout/Header';
+
 import { Navigation } from '@/components/layout/Navigation';
-import { ToyCard } from '@/components/features/ToyCard';
-import { mockToys } from '@/lib/mock/toys';
+import { PEPE_MODELS } from '@/lib/data/pepe_models';
+import { TgsPlayer } from '@/components/ui/TgsPlayer';
 import styles from './page.module.css';
 import { useLanguage } from '@/lib/context/LanguageContext';
 
@@ -13,7 +13,6 @@ export default function Home() {
 
     return (
         <div className={styles.container}>
-            <Header />
 
             <main className={styles.main}>
                 <div className={styles.hero}>
@@ -22,12 +21,22 @@ export default function Home() {
                 </div>
 
                 <div className={styles.grid}>
-                    {mockToys.map((toy) => (
-                        <ToyCard
-                            key={toy.id}
-                            toy={toy}
-                        // onBuy={() => console.log('Buy', toy.id)}
-                        />
+                    {PEPE_MODELS.map((model) => (
+                        <div key={model.name} className={styles.modelCard}>
+                            <div className={styles.modelImage}>
+                                <TgsPlayer
+                                    src={`/models/${model.tgsFile}`}
+                                    style={{ width: 100, height: 100 }}
+                                    autoplay
+                                />
+                            </div>
+                            <div className={styles.modelInfo}>
+                                <span className={styles.modelName}>{model.name}</span>
+                                <span className={`${styles.modelRarity} ${styles[model.rarity]}`}>
+                                    {model.rarity}
+                                </span>
+                            </div>
+                        </div>
                     ))}
                 </div>
             </main>

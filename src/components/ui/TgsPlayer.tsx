@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import lottie, { type AnimationItem } from "lottie-web";
 import pako from "pako";
+import { useAnimations } from "@/lib/context/AnimationContext";
 
 interface TgsPlayerProps {
     src: string;
@@ -20,10 +21,29 @@ export const TgsPlayer = React.memo(
         const containerRef = useRef<HTMLDivElement>(null);
         const animationRef = useRef<AnimationItem | null>(null);
         const [animationData, setAnimationData] = useState<object | null>(null);
+        const { animationsEnabled } = useAnimations();
         const baseClass = unstyled
             ? "group flex items-center justify-center"
             : "group flex h-10 w-10 items-center justify-center rounded-full bg-neutral-200/80 p-2 text-2xl text-neutral-500 transition-all duration-300 hover:bg-neutral-300/50 dark:bg-neutral-800/80 dark:hover:bg-neutral-800/50";
         const wrapperClassName = className ? `${baseClass} ${className}` : baseClass;
+
+        // Listen for animation toggle changes
+        useEffect(() => {
+            const handleToggle = (e: CustomEvent) => {
+                const enabled = e.detail;
+                // Immediately pause/play current animation
+                if (animationRef.current) {
+                    if (enabled) {
+                        animationRef.current.play();
+                    } else {
+                        animationRef.current.goToAndStop(0, true);
+                    }
+                }
+            };
+
+            window.addEventListener('animationsToggle', handleToggle as EventListener);
+            return () => window.removeEventListener('animationsToggle', handleToggle as EventListener);
+        }, []);
 
         useEffect(() => {
             const fetchAndDecompress = async () => {
@@ -71,11 +91,19 @@ export const TgsPlayer = React.memo(
                 animationData,
             });
 
+            // If animations disabled globally, show first frame and don't play
+            if (!animationsEnabled) {
+                animationRef.current.goToAndStop(0, true);
+                return () => {
+                    animationRef.current?.destroy();
+                };
+            }
+
             // "Smart" Vision Zone Observer
             const observer = new IntersectionObserver(
                 (entries) => {
                     entries.forEach((entry) => {
-                        if (entry.isIntersecting && autoplay) {
+                        if (entry.isIntersecting && autoplay && animationsEnabled) {
                             animationRef.current?.play();
                         } else {
                             animationRef.current?.pause();
@@ -94,11 +122,11 @@ export const TgsPlayer = React.memo(
                 observer.disconnect();
                 animationRef.current?.destroy();
             };
-        }, [animationData, loop, autoplay]);
+        }, [animationData, loop, autoplay, animationsEnabled]);
 
 
         const handleMouseEnter = () => {
-            if (playOnHover && animationRef.current) {
+            if (playOnHover && animationRef.current && animationsEnabled) {
                 animationRef.current.goToAndPlay(0);
             }
         };

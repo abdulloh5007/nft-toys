@@ -211,6 +211,16 @@
     animation: fadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.5s both;
 }
 
+.activatedByBadge {
+    background: rgba(59, 130, 246, 0.15);
+    padding: 8px 16px;
+    border-radius: 12px;
+    font-size: 14px;
+    color: #3b82f6;
+    margin-bottom: 8px;
+    animation: fadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.4s both;
+}
+
 /* Custom Fade Up Animation */
 @keyframes fadeUp {
     0% {

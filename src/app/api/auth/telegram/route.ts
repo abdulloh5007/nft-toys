@@ -21,6 +21,16 @@ function verifyTelegramData(initData: string): { valid: boolean; user?: Telegram
 
         if (!hash) return { valid: false };
 
+        // Check auth_date expiry (24 hours max)
+        const authDate = parseInt(params.get('auth_date') || '0', 10);
+        const now = Math.floor(Date.now() / 1000);
+        const maxAge = 86400; // 24 hours
+
+        if (now - authDate > maxAge) {
+            console.warn('Telegram auth_date expired');
+            return { valid: false };
+        }
+
         // Remove hash from params
         params.delete('hash');
 
@@ -42,7 +52,12 @@ function verifyTelegramData(initData: string): { valid: boolean; user?: Telegram
             .update(sortedParams)
             .digest('hex');
 
-        if (hash !== expectedHash) {
+        // Timing-safe comparison to prevent timing attacks
+        if (hash.length !== expectedHash.length) {
+            return { valid: false };
+        }
+
+        if (!crypto.timingSafeEqual(Buffer.from(hash), Buffer.from(expectedHash))) {
             return { valid: false };
         }
 
@@ -104,6 +119,29 @@ export async function POST(request: NextRequest) {
         const userRef = doc(db, 'users', uid);
         const existingUser = await getDoc(userRef);
 
+        // Auto-create wallet if user doesn't have one
+        let walletAddress = existingUser.exists() ? existingUser.data().walletAddress : null;
+        let walletFriendly = existingUser.exists() ? existingUser.data().walletFriendly : null;
+
+        if (!walletAddress) {
+            const { generateWalletAddress, toFriendlyAddress } = await import('@/lib/utils/crypto');
+            const wallet = generateWalletAddress();
+            walletAddress = wallet.address;
+            walletFriendly = toFriendlyAddress(wallet.address);
+
+            // Save wallet to wallets collection
+            const walletRef = doc(db, 'wallets', wallet.address);
+            await setDoc(walletRef, {
+                address: wallet.address,
+                friendlyAddress: walletFriendly,
+                userId: uid,
+                addressHash: wallet.addressHash, // For verification only
+                createdAt: serverTimestamp(),
+                nfts: [],
+                balance: 0,
+            });
+        }
+
         const userData = {
             telegramId: user.id,
             firstName: user.first_name,
@@ -111,6 +149,8 @@ export async function POST(request: NextRequest) {
             username: user.username || null,
             photoUrl: user.photo_url || null,
             languageCode: user.language_code || null,
+            walletAddress,
+            walletFriendly,
             lastLoginAt: serverTimestamp(),
             ...(existingUser.exists() ? {} : { createdAt: serverTimestamp() })
         };
@@ -127,6 +167,8 @@ export async function POST(request: NextRequest) {
                 lastName: user.last_name,
                 username: user.username,
                 photoUrl: user.photo_url,
+                walletAddress,
+                walletFriendly,
             }
         });
 
