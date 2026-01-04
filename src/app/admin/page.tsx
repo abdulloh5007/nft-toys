@@ -399,7 +399,7 @@ export default function AdminPage() {
 
                 {/* QR List */}
                 <div className={styles.qrList}>
-                    <h2><QrCode size={20} /> {t('created_qr')}</h2>
+
 
                     {isLoadingList ? (
                         <div className={styles.loadingSpinner}>

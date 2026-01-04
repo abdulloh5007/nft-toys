@@ -8,11 +8,54 @@ import crypto from 'crypto';
 const TOKEN_SECRET = process.env.TOKEN_SECRET || '';
 
 // Verify token with strong HMAC (must match create route)
+// Supports both new format (base64url_timestamp_salt_signature) and legacy format (base64.timestamp.salt.signature)
 function verifyToken(token: string): { valid: boolean; nfcId?: string } {
     if (!TOKEN_SECRET) {
         console.warn('⚠️ TOKEN_SECRET not set');
     }
 
+    // Try new format first (underscore separator, base64url)
+    const newFormatResult = verifyTokenNewFormat(token);
+    if (newFormatResult.valid) {
+        return newFormatResult;
+    }
+
+    // Fall back to legacy format (dot separator, base64)
+    return verifyTokenLegacyFormat(token);
+}
+
+// New format: base64url(nfcId)_timestamp_salt_signature
+function verifyTokenNewFormat(token: string): { valid: boolean; nfcId?: string } {
+    try {
+        const parts = token.split('_');
+        if (parts.length < 4) return { valid: false };
+
+        const signature = parts.pop()!;
+        const salt = parts.pop()!;
+        const timestamp = parts.pop()!;
+        const nfcIdB64 = parts.join('_');
+
+        const nfcId = Buffer.from(nfcIdB64, 'base64url').toString('utf-8');
+
+        const expectedSignature = crypto
+            .createHmac('sha256', TOKEN_SECRET)
+            .update(`${nfcId}:${timestamp}:${salt}`)
+            .digest('hex')
+            .substring(0, 32);
+
+        if (signature.length !== expectedSignature.length) return { valid: false };
+        if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature))) {
+            return { valid: false };
+        }
+
+        return { valid: true, nfcId };
+    } catch {
+        return { valid: false };
+    }
+}
+
+// Legacy format: base64(nfcId).timestamp.salt.signature
+function verifyTokenLegacyFormat(token: string): { valid: boolean; nfcId?: string } {
     try {
         const parts = token.split('.');
         if (parts.length !== 4) return { valid: false };
@@ -26,7 +69,6 @@ function verifyToken(token: string): { valid: boolean; nfcId?: string } {
             .digest('hex')
             .substring(0, 32);
 
-        // Timing-safe comparison to prevent timing attacks
         if (signature.length !== expectedSignature.length) return { valid: false };
         if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature))) {
             return { valid: false };

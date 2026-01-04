@@ -5,6 +5,13 @@ import { useTelegram } from './TelegramContext';
 
 const ANIMATION_STORAGE_KEY = 'animations_enabled';
 
+// Helper to check if CloudStorage is available (requires TG WebApp 6.9+)
+const isCloudStorageAvailable = (webApp: any): boolean => {
+    if (!webApp) return false;
+    const version = parseFloat(webApp.version || '0');
+    return version >= 6.9 && !!webApp.CloudStorage;
+};
+
 interface AnimationContextType {
     animationsEnabled: boolean;
     setAnimationsEnabled: (enabled: boolean) => void;
@@ -24,18 +31,18 @@ export const AnimationProvider = ({ children }: { children: React.ReactNode }) =
     const [animationsEnabled, setAnimationsEnabledState] = useState(true);
     const [isLoading, setIsLoading] = useState(true);
 
-    // Load from CloudStorage on mount
+    // Load from CloudStorage on mount (only in TG WebApp 6.9+)
     useEffect(() => {
         try {
-            if (webApp?.CloudStorage) {
-                webApp.CloudStorage.getItem(ANIMATION_STORAGE_KEY, (err, value) => {
+            if (isCloudStorageAvailable(webApp)) {
+                webApp!.CloudStorage.getItem(ANIMATION_STORAGE_KEY, (err: Error | null, value?: string) => {
                     if (!err && value !== undefined && value !== null && value !== '') {
                         setAnimationsEnabledState(value === 'true');
                     }
                     setIsLoading(false);
                 });
             } else {
-                // No CloudStorage available (browser), use default
+                // No CloudStorage available (browser or old TG version), use default
                 setIsLoading(false);
             }
         } catch (error) {
@@ -47,10 +54,10 @@ export const AnimationProvider = ({ children }: { children: React.ReactNode }) =
     const setAnimationsEnabled = (enabled: boolean) => {
         setAnimationsEnabledState(enabled);
 
-        // Save to CloudStorage (if available)
+        // Save to CloudStorage (if available - TG WebApp 6.9+)
         try {
-            if (webApp?.CloudStorage) {
-                webApp.CloudStorage.setItem(ANIMATION_STORAGE_KEY, String(enabled));
+            if (isCloudStorageAvailable(webApp)) {
+                webApp!.CloudStorage.setItem(ANIMATION_STORAGE_KEY, String(enabled));
             }
         } catch (error) {
             console.warn('Failed to save to CloudStorage:', error);

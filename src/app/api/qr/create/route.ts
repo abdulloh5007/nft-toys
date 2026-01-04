@@ -12,6 +12,7 @@ if (!TOKEN_SECRET || TOKEN_SECRET.length < 32) {
 }
 
 // Generate secure token with strong HMAC
+// Uses base64url encoding and safe separators for Telegram startapp compatibility
 function generateSecureToken(nfcId: string): string {
     const secret = TOKEN_SECRET || crypto.randomBytes(32).toString('hex');
 
@@ -25,8 +26,12 @@ function generateSecureToken(nfcId: string): string {
         .update(`${nfcId}:${timestamp}:${salt}`)
         .digest('hex');
 
-    // Token format: base64(nfcId).timestamp.salt.signature(32 chars)
-    return `${Buffer.from(nfcId).toString('base64')}.${timestamp}.${salt}.${signature.substring(0, 32)}`;
+    // Base64url encode the nfcId (safe for URLs and Telegram startapp)
+    const nfcIdEncoded = Buffer.from(nfcId).toString('base64url');
+
+    // Token format: base64url(nfcId)_timestamp_salt_signature(32 chars)
+    // Using underscore as separator (safe for Telegram startapp which only allows a-zA-Z0-9_)
+    return `${nfcIdEncoded}_${timestamp}_${salt}_${signature.substring(0, 32)}`;
 }
 
 // Verify token
@@ -34,11 +39,19 @@ function verifyToken(token: string): { valid: boolean; nfcId?: string } {
     const secret = TOKEN_SECRET || '';
 
     try {
-        const parts = token.split('.');
-        if (parts.length !== 4) return { valid: false };
+        const parts = token.split('_');
+        // Token has 4 parts: nfcId, timestamp, salt, signature
+        // But nfcId itself might contain underscores after base64url encoding, so we need to be careful
+        if (parts.length < 4) return { valid: false };
 
-        const [nfcIdB64, timestamp, salt, signature] = parts;
-        const nfcId = Buffer.from(nfcIdB64, 'base64').toString('utf-8');
+        // Last 3 parts are definitely: timestamp, salt, signature
+        const signature = parts.pop()!;
+        const salt = parts.pop()!;
+        const timestamp = parts.pop()!;
+        // The rest is the nfcId (in case it had underscores)
+        const nfcIdB64 = parts.join('_');
+
+        const nfcId = Buffer.from(nfcIdB64, 'base64url').toString('utf-8');
 
         const expectedSignature = crypto
             .createHmac('sha256', secret)

@@ -7,6 +7,14 @@ import { signInWithCustomToken, User, onAuthStateChanged } from 'firebase/auth';
 
 const USER_CACHE_KEY = 'user_profile_cache';
 
+// Helper to check if CloudStorage is available (requires TG WebApp 6.9+)
+const isCloudStorageAvailable = (app: IWebApp | null): boolean => {
+    if (!app) return false;
+    // CloudStorage requires version 6.9 or higher
+    const version = parseFloat(app.version || '0');
+    return version >= 6.9 && !!app.CloudStorage;
+};
+
 interface TelegramContextType {
     webApp: IWebApp | null;
     user: any;
@@ -87,26 +95,47 @@ export const TelegramProvider = ({ children }: { children: React.ReactNode }) =>
             document.documentElement.style.setProperty('--tg-theme-secondary-bg-color', app.themeParams.secondary_bg_color || '#1E1E1E');
 
             // Handle startapp deeplink parameter
+            // Only redirect if we're not already on the activate page and haven't processed this yet
             const startParam = app.initDataUnsafe?.start_param;
             if (startParam && startParam.startsWith('activate_')) {
                 const token = startParam.replace('activate_', '');
-                window.location.href = `/activate/${encodeURIComponent(token)}`;
+                const targetPath = `/activate/${token}`; // Don't encode - token is already URL-safe
+
+                // Use sessionStorage flag to prevent infinite redirect loops
+                const redirectKey = `startapp_processed_${token.substring(0, 20)}`;
+                const alreadyProcessed = sessionStorage.getItem(redirectKey);
+                const alreadyOnPage = window.location.pathname.includes('/activate/');
+
+                if (!alreadyProcessed && !alreadyOnPage) {
+                    // Mark as processed before redirecting
+                    sessionStorage.setItem(redirectKey, 'true');
+                    console.log('🔗 Redirecting to activate page:', targetPath);
+                    window.location.replace(targetPath); // Use replace to avoid history issues
+                } else {
+                    console.log('✅ Already on activate page or already processed');
+                }
             }
 
             // Load cached user data from CloudStorage for instant profile display
-            if (app.CloudStorage) {
-                app.CloudStorage.getItem(USER_CACHE_KEY, (error, value) => {
-                    if (!error && value) {
-                        try {
-                            const cachedUser = JSON.parse(value);
-                            // Only use cache if we don't have extended user yet
-                            setExtendedUser((prev: any) => prev || cachedUser);
-                            console.log('📦 Loaded cached user profile');
-                        } catch (e) {
-                            console.warn('Failed to parse cached user data');
+            // Only works in Telegram WebApp 6.9+, silently skip in older versions or browser
+            if (isCloudStorageAvailable(app)) {
+                try {
+                    app.CloudStorage.getItem(USER_CACHE_KEY, (error, value) => {
+                        if (!error && value) {
+                            try {
+                                const cachedUser = JSON.parse(value);
+                                // Only use cache if we don't have extended user yet
+                                setExtendedUser((prev: any) => prev || cachedUser);
+                                console.log('📦 Loaded cached user profile');
+                            } catch (e) {
+                                console.warn('Failed to parse cached user data');
+                            }
                         }
-                    }
-                });
+                    });
+                } catch (e) {
+                    // CloudStorage not supported in this version, silently ignore
+                    console.log('ℹ️ CloudStorage not available, skipping cache load');
+                }
             }
         }
     }, []);
@@ -140,18 +169,24 @@ export const TelegramProvider = ({ children }: { children: React.ReactNode }) =>
                     setExtendedUser(userInfo);
 
                     // Cache user data to CloudStorage for faster loading on next open
-                    if (webApp.CloudStorage) {
-                        webApp.CloudStorage.setItem(
-                            USER_CACHE_KEY,
-                            JSON.stringify(userInfo),
-                            (error) => {
-                                if (error) {
-                                    console.warn('Failed to cache user profile:', error);
-                                } else {
-                                    console.log('💾 Cached user profile to CloudStorage');
+                    // Only works in Telegram WebApp 6.9+, silently skip in older versions or browser
+                    if (isCloudStorageAvailable(webApp)) {
+                        try {
+                            webApp.CloudStorage.setItem(
+                                USER_CACHE_KEY,
+                                JSON.stringify(userInfo),
+                                (error) => {
+                                    if (error) {
+                                        console.warn('Failed to cache user profile:', error);
+                                    } else {
+                                        console.log('💾 Cached user profile to CloudStorage');
+                                    }
                                 }
-                            }
-                        );
+                            );
+                        } catch (e) {
+                            // CloudStorage not supported, silently ignore
+                            console.log('ℹ️ CloudStorage not available, skipping cache save');
+                        }
                     }
 
                     console.log('✅ Firebase auth successful');
