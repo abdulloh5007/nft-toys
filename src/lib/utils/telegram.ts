@@ -82,6 +82,9 @@ export interface IWebApp {
   enableClosingConfirmation: VoidFunction;
   disableClosingConfirmation: VoidFunction;
   showConfirm: (message: string, callback: (confirmed: boolean) => void) => void;
+  // QR Scanner (Telegram 6.4+)
+  showScanQrPopup: (params: { text?: string }, callback: (text: string) => boolean | void) => void;
+  closeScanQrPopup: VoidFunction;
 }
 
 const mockWebApp: IWebApp = {
@@ -189,6 +192,13 @@ const mockWebApp: IWebApp = {
   showConfirm: (msg: string, cb: (confirmed: boolean) => void) => {
     console.log('[Mock] Show Confirm:', msg);
     cb(true);
+  },
+  showScanQrPopup: (params: { text?: string }, cb: (text: string) => boolean | void) => {
+    console.log('[Mock] Show QR Scanner:', params.text);
+    // For mock, we just log - real TG will show native scanner
+  },
+  closeScanQrPopup: () => {
+    console.log('[Mock] Close QR Scanner');
   },
 };
 

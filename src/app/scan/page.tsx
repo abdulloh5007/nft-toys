@@ -6,18 +6,29 @@ import { useRouter } from 'next/navigation';
 import { Navigation } from '@/components/layout/Navigation';
 import { Button } from '@/components/ui/Button';
 import { useLanguage } from '@/lib/context/LanguageContext';
-import { Scan } from 'lucide-react';
+import { useTelegram } from '@/lib/context/TelegramContext';
+import { Scan, Camera } from 'lucide-react';
 import { QRScanner } from '@/components/features/QRScanner';
 import styles from './page.module.css';
 
 export default function ScanPage() {
     const router = useRouter();
     const { t } = useLanguage();
+    const { webApp } = useTelegram();
 
     const [isScanning, setIsScanning] = React.useState(false);
     const [isLoading, setIsLoading] = React.useState(false);
+    const [useTelegramScanner, setUseTelegramScanner] = React.useState(false);
+    const [scanError, setScanError] = React.useState<string | null>(null);
 
-    const handleScan = (text: string) => {
+    // Check if Telegram QR scanner is available (TG 6.4+)
+    const hasTelegramScanner = React.useMemo(() => {
+        if (!webApp) return false;
+        const version = parseFloat(webApp.version || '0');
+        return version >= 6.4 && typeof webApp.showScanQrPopup === 'function';
+    }, [webApp]);
+
+    const handleScan = React.useCallback((text: string) => {
         if (text && !isLoading) {
             setIsLoading(true);
             setIsScanning(false);
@@ -48,14 +59,53 @@ export default function ScanPage() {
             // Small delay to show the loading state before redirect
             setTimeout(() => {
                 router.push(redirectUrl);
-            }, 500);
+            }, 300);
         }
+    }, [isLoading, router]);
+
+    // Start Telegram native QR scanner
+    const startTelegramScanner = React.useCallback(() => {
+        if (!webApp || !hasTelegramScanner) return;
+
+        setScanError(null);
+        setIsScanning(true);
+
+        try {
+            webApp.showScanQrPopup(
+                { text: t('scan_hint') || 'Point camera at QR code' },
+                (text: string) => {
+                    if (text) {
+                        handleScan(text);
+                        return true; // Close scanner
+                    }
+                    return false; // Keep scanning
+                }
+            );
+        } catch (error) {
+            console.error('Telegram scanner error:', error);
+            setScanError('Could not start scanner. Please try again.');
+            setIsScanning(false);
+        }
+    }, [webApp, hasTelegramScanner, handleScan, t]);
+
+    // Start custom camera scanner
+    const startCustomScanner = () => {
+        setScanError(null);
+        setUseTelegramScanner(false);
+        setIsScanning(true);
     };
 
     // Auto-start scanning when page loads
     React.useEffect(() => {
-        setIsScanning(true);
-    }, []);
+        if (hasTelegramScanner) {
+            // Use Telegram native scanner
+            setUseTelegramScanner(true);
+            startTelegramScanner();
+        } else {
+            // Fall back to custom camera scanner
+            setIsScanning(true);
+        }
+    }, [hasTelegramScanner, startTelegramScanner]);
 
     return (
         <div className={styles.container}>
@@ -63,9 +113,24 @@ export default function ScanPage() {
                 <div className={styles.scanZone}>
                     {/* Camera Viewfinder UI */}
                     <div className={styles.cameraFrame}>
-                        {isScanning && (
+                        {/* Show custom scanner if not using Telegram's */}
+                        {isScanning && !useTelegramScanner && (
                             <div className={styles.scannerContainer}>
-                                <QRScanner onScan={handleScan} />
+                                <QRScanner
+                                    onScan={handleScan}
+                                    onError={(error) => {
+                                        console.error('QR Scanner error:', error);
+                                        setScanError('Camera error. Try Telegram scanner instead.');
+                                    }}
+                                />
+                            </div>
+                        )}
+
+                        {/* Show message when using Telegram scanner */}
+                        {useTelegramScanner && isScanning && (
+                            <div className={styles.telegramScannerHint}>
+                                <Camera size={48} className={styles.scanIcon} />
+                                <p>{t('scanning') || 'Scanning...'}</p>
                             </div>
                         )}
 
@@ -74,7 +139,7 @@ export default function ScanPage() {
                         <div className={styles.cornerBL}></div>
                         <div className={styles.cornerBR}></div>
 
-                        {isScanning && <div className={styles.scanLine}></div>}
+                        {isScanning && !useTelegramScanner && <div className={styles.scanLine}></div>}
 
                         {!isScanning && (
                             <div className={styles.iconOverlay}>
@@ -82,6 +147,23 @@ export default function ScanPage() {
                             </div>
                         )}
                     </div>
+
+                    {/* Error message and retry buttons */}
+                    {scanError && (
+                        <div className={styles.errorContainer}>
+                            <p className={styles.errorText}>{scanError}</p>
+                            <div className={styles.buttonRow}>
+                                {hasTelegramScanner && (
+                                    <Button onClick={startTelegramScanner} variant="primary">
+                                        Use Telegram Scanner
+                                    </Button>
+                                )}
+                                <Button onClick={startCustomScanner} variant="secondary">
+                                    Use Camera
+                                </Button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </main>
 
@@ -89,3 +171,4 @@ export default function ScanPage() {
         </div>
     );
 }
+

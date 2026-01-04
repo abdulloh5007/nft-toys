@@ -327,6 +327,9 @@ export async function GET(request: NextRequest) {
                 ? new Date(qrData.usedAt.seconds * 1000).toISOString()
                 : null,
             usedBy: qrData.usedBy,
+            usedByName: qrData.usedByName || null,
+            usedByPhoto: qrData.usedByPhoto || null,
+            usedByFirstName: qrData.usedByFirstName || null,
         });
 
     } catch (error) {

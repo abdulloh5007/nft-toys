@@ -20,6 +20,11 @@ function isCloudflaredOrigin(origin: string): boolean {
     return origin.endsWith('.trycloudflare.com');
 }
 
+// Check if origin is ngrok tunnel (in development)
+function isNgrokOrigin(origin: string): boolean {
+    return origin.endsWith('.ngrok.io') || origin.endsWith('.ngrok-free.app');
+}
+
 /**
  * Validates Origin header against allowed origins
  */
@@ -29,9 +34,10 @@ export function validateOrigin(request: NextRequest): NextResponse | null {
     // Allow requests without origin (same-origin, mobile apps)
     if (!origin) return null;
 
-    // Check if origin is allowed OR is a cloudflared tunnel
+    // Check if origin is allowed OR is a dev tunnel (cloudflare/ngrok)
     const isAllowed = ALLOWED_ORIGINS.some(allowed => origin.startsWith(allowed))
-        || isCloudflaredOrigin(origin);
+        || isCloudflaredOrigin(origin)
+        || isNgrokOrigin(origin);
 
     if (!isAllowed) {
         console.warn(`Blocked request from origin: ${origin}`);
