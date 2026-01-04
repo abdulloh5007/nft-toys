@@ -98,5 +98,7 @@
     "language": "Til",
     "animations": "Animatsiyalar",
     "enable_animations": "Animatsiyalarni yoqish",
-    "activated_by": "Faollashtirgan"
+    "activated_by": "Faollashtirgan",
+    "nft_has_owner": "Bu NFT allaqachon egaga ega",
+    "activated_at": "Faollashtirilgan"
 }

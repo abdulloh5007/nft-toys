@@ -127,16 +127,20 @@ export async function POST(request: NextRequest) {
                     ? new Date(qrData.usedAt.seconds * 1000).toISOString()
                     : null,
                 usedBy: qrData.usedBy,
-                usedByName: qrData.usedByName || null
+                usedByName: qrData.usedByName || null,
+                usedByPhoto: qrData.usedByPhoto || null,
+                usedByFirstName: qrData.usedByFirstName || null,
             }, { status: 409 });
         }
 
-        // Mark as used
+        // Mark as used - include more user data
         await updateDoc(qrRef, {
             status: 'used',
             usedAt: serverTimestamp(),
             usedBy: userId || 'anonymous',
             usedByName: username || null,
+            usedByPhoto: body.userPhoto || null,
+            usedByFirstName: body.firstName || null,
         });
 
         // ===== MINT NFT =====

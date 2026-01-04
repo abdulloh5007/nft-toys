@@ -98,5 +98,7 @@
     "language": "Язык",
     "animations": "Анимации",
     "enable_animations": "Включить анимации",
-    "activated_by": "Активировал"
+    "activated_by": "Активировал",
+    "nft_has_owner": "Этот NFT уже имеет владельца",
+    "activated_at": "Активировано"
 }

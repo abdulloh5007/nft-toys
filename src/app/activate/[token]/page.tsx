@@ -35,6 +35,8 @@ export default function ActivatePage() {
     const [status, setStatus] = useState<PageStatus>('loading');
     const [activationTime, setActivationTime] = useState<string | null>(null);
     const [activatedBy, setActivatedBy] = useState<string | null>(null);
+    const [activatedByPhoto, setActivatedByPhoto] = useState<string | null>(null);
+    const [activatedByFirstName, setActivatedByFirstName] = useState<string | null>(null);
     const [errorMessage, setErrorMessage] = useState<string>('');
 
     useEffect(() => {
@@ -75,6 +77,8 @@ export default function ActivatePage() {
                         : ''
                     );
                     setActivatedBy(data.usedByName || null);
+                    setActivatedByPhoto(data.usedByPhoto || null);
+                    setActivatedByFirstName(data.usedByFirstName || null);
                     return;
                 }
 
@@ -148,6 +152,8 @@ export default function ActivatePage() {
                     token,
                     userId: firebaseUser?.uid || `tg_${user?.id}` || 'anonymous',
                     username: user?.username || user?.first_name || null,
+                    userPhoto: user?.photo_url || null,
+                    firstName: user?.first_name || null,
                 }),
             });
 
@@ -234,19 +240,41 @@ export default function ActivatePage() {
 
         if (status === 'already_used') {
             return (
-                <div className={styles.errorContainer}>
-                    <AlertTriangle size={64} className={styles.warningIcon} />
-                    <h3 className={styles.warningTitle}>{t('already_activated') || 'Already Activated'}</h3>
-                    {activatedBy && (
-                        <div className={styles.activatedByBadge}>
-                            <span>{t('activated_by') || 'Activated by'}: @{activatedBy}</span>
+                <div className={styles.alreadyUsedContainer}>
+                    <div className={styles.alreadyUsedIcon}>
+                        <AlertTriangle size={48} />
+                    </div>
+                    <h3 className={styles.alreadyUsedTitle}>{t('already_activated') || 'Already Activated'}</h3>
+                    <p className={styles.alreadyUsedDesc}>{t('nft_has_owner') || 'This NFT already has an owner'}</p>
+
+                    {/* Owner Card */}
+                    <div className={styles.ownerCard}>
+                        <div className={styles.ownerAvatar}>
+                            {activatedByPhoto ? (
+                                <img src={activatedByPhoto} alt="Owner" className={styles.ownerAvatarImg} />
+                            ) : (
+                                <div className={styles.ownerAvatarPlaceholder}>
+                                    {activatedByFirstName?.[0] || activatedBy?.[0] || '?'}
+                                </div>
+                            )}
                         </div>
-                    )}
+                        <div className={styles.ownerInfo}>
+                            <span className={styles.ownerName}>
+                                {activatedByFirstName || (activatedBy ? `@${activatedBy}` : 'Unknown')}
+                            </span>
+                            {activatedBy && activatedByFirstName && (
+                                <span className={styles.ownerUsername}>@{activatedBy}</span>
+                            )}
+                        </div>
+                    </div>
+
                     {activationTime && (
-                        <div className={styles.timeBadge}>
-                            <span>{t('time') || 'Time'}: {activationTime}</span>
+                        <div className={styles.activationTimeBadge}>
+                            <span className={styles.activationTimeLabel}>{t('activated_at') || 'Activated'}</span>
+                            <span className={styles.activationTimeValue}>{activationTime}</span>
                         </div>
                     )}
+
                     <Button onClick={handleHomeClick} variant="secondary" fullWidth className={styles.homeBtn}>
                         <Home size={18} />
                         {t('home') || 'Home'}
