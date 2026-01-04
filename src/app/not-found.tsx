@@ -11,8 +11,6 @@ import styles from './not-found.module.css';
 export default function NotFound() {
     return (
         <div className={styles.container}>
-            <Header />
-
             <main className={styles.main}>
                 <div className={styles.content}>
                     <div className={styles.errorCode}>

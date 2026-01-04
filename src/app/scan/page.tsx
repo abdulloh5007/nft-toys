@@ -59,8 +59,6 @@ export default function ScanPage() {
 
     return (
         <div className={styles.container}>
-            <Header />
-
             <main className={styles.main}>
                 <div className={styles.scanZone}>
                     {/* Camera Viewfinder UI */}

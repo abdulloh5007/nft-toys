@@ -13,6 +13,7 @@ export interface IWebApp {
     user: ITelegramUser;
     auth_date: string;
     hash: string;
+    start_param?: string;
   };
   version: string;
   platform: string;

@@ -172,7 +172,6 @@ export default function ScanResultPage() {
 
     return (
         <div className={styles.container}>
-            <Header />
             <main className={styles.main}>
                 {renderContent()}
             </main>

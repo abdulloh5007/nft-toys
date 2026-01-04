@@ -41,15 +41,13 @@ export default function ToyDetailPage() {
     }, [params.id]);
 
     if (!toy) {
-        return <div className={styles.container}><Header /><main className={styles.main}>{t('loading')}</main></div>;
+        return <div className={styles.container}><main className={styles.main}>{t('loading')}</main></div>;
     }
 
     const isOwner = user?.id === toy.ownerId;
 
     return (
         <div className={styles.container}>
-            <Header />
-
             <main className={styles.main}>
                 {/* Left Column: Image */}
                 <div className={styles.imageWrapper}>
@@ -149,7 +147,13 @@ export default function ToyDetailPage() {
                 <TransferModal
                     isOpen={transferModalOpen}
                     onClose={() => setTransferModalOpen(false)}
-                    toy={toy}
+                    nft={{
+                        tokenId: toy.id,
+                        modelName: toy.name,
+                        serialNumber: parseInt(((toy as any).serialNumber || '#0').replace('#', ''), 10),
+                        rarity: toy.rarity,
+                        tgsUrl: toy.tgsUrl || '',
+                    }}
                 />
             )}
         </div>
