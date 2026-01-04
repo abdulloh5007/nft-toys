@@ -5,6 +5,8 @@ import { getTelegramWebApp, IWebApp } from '@/lib/utils/telegram';
 import { auth } from '@/lib/firebase/config';
 import { signInWithCustomToken, User, onAuthStateChanged } from 'firebase/auth';
 
+const USER_CACHE_KEY = 'user_profile_cache';
+
 interface TelegramContextType {
     webApp: IWebApp | null;
     user: any;
@@ -54,6 +56,9 @@ export const TelegramProvider = ({ children }: { children: React.ReactNode }) =>
         return () => unsubscribe();
     }, []);
 
+    // State for extended user info (including wallet and photo_url)
+    const [extendedUser, setExtendedUser] = useState<any>(null);
+
     // Initialize Telegram WebApp
     useEffect(() => {
         const app = getTelegramWebApp();
@@ -87,11 +92,24 @@ export const TelegramProvider = ({ children }: { children: React.ReactNode }) =>
                 const token = startParam.replace('activate_', '');
                 window.location.href = `/activate/${encodeURIComponent(token)}`;
             }
+
+            // Load cached user data from CloudStorage for instant profile display
+            if (app.CloudStorage) {
+                app.CloudStorage.getItem(USER_CACHE_KEY, (error, value) => {
+                    if (!error && value) {
+                        try {
+                            const cachedUser = JSON.parse(value);
+                            // Only use cache if we don't have extended user yet
+                            setExtendedUser((prev: any) => prev || cachedUser);
+                            console.log('📦 Loaded cached user profile');
+                        } catch (e) {
+                            console.warn('Failed to parse cached user data');
+                        }
+                    }
+                });
+            }
         }
     }, []);
-
-    // State for extended user info (including wallet)
-    const [extendedUser, setExtendedUser] = useState<any>(null);
 
     // Authenticate with Firebase when Telegram is ready
     useEffect(() => {
@@ -111,12 +129,30 @@ export const TelegramProvider = ({ children }: { children: React.ReactNode }) =>
                     const data = await response.json();
                     await signInWithCustomToken(auth, data.token);
 
-                    // Store extended user info with wallet
-                    setExtendedUser({
+                    // Build extended user info with wallet and photo_url
+                    const userInfo = {
                         ...webApp.initDataUnsafe?.user,
                         walletAddress: data.user.walletAddress,
                         walletFriendly: data.user.walletFriendly,
-                    });
+                        photo_url: data.user.photoUrl || webApp.initDataUnsafe?.user?.photo_url,
+                    };
+
+                    setExtendedUser(userInfo);
+
+                    // Cache user data to CloudStorage for faster loading on next open
+                    if (webApp.CloudStorage) {
+                        webApp.CloudStorage.setItem(
+                            USER_CACHE_KEY,
+                            JSON.stringify(userInfo),
+                            (error) => {
+                                if (error) {
+                                    console.warn('Failed to cache user profile:', error);
+                                } else {
+                                    console.log('💾 Cached user profile to CloudStorage');
+                                }
+                            }
+                        );
+                    }
 
                     console.log('✅ Firebase auth successful');
                 } else {

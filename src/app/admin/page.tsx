@@ -87,7 +87,7 @@ interface QRCodeData {
 
 export default function AdminPage() {
     const { t } = useLanguage();
-    const { user, isAuthenticated, ready } = useTelegram();
+    const { user, isAuthenticated, ready, webApp } = useTelegram();
     const [selectedModel, setSelectedModel] = useState<string>('');
     const [selectedRarity, setSelectedRarity] = useState<string>(''); // Add rarity state
     const [serialNumber, setSerialNumber] = useState<string>('');
@@ -102,8 +102,11 @@ export default function AdminPage() {
     const [validationErrors, setValidationErrors] = useState({ rarity: false, model: false, serial: false });
     const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
+    // Get the Telegram user ID from multiple sources for reliability
+    const telegramUserId = user?.id || webApp?.initDataUnsafe?.user?.id;
+
     // Check admin access
-    const isAdmin = user?.id && ADMIN_IDS.includes(String(user.id));
+    const isAdmin = telegramUserId && ADMIN_IDS.includes(String(telegramUserId));
 
     const selectedModelData = PEPE_MODELS.find(m => m.name === selectedModel);
 
@@ -114,13 +117,21 @@ export default function AdminPage() {
     // Wait for auth to complete before checking admin
     useEffect(() => {
         if (ready) {
-            // Give a small delay for user data to be available
-            const timer = setTimeout(() => {
+            // Wait for user data to be available, or timeout after 2 seconds
+            if (telegramUserId) {
+                // User ID is available, can check admin now
+                console.log('🔐 Admin check - User ID:', telegramUserId, 'Admin IDs:', ADMIN_IDS, 'Is Admin:', ADMIN_IDS.includes(String(telegramUserId)));
                 setIsCheckingAuth(false);
-            }, 500);
-            return () => clearTimeout(timer);
+            } else {
+                // Wait a bit more for user data
+                const timer = setTimeout(() => {
+                    console.log('🔐 Admin check timeout - User ID:', telegramUserId, 'Admin IDs:', ADMIN_IDS);
+                    setIsCheckingAuth(false);
+                }, 2000);
+                return () => clearTimeout(timer);
+            }
         }
-    }, [ready]);
+    }, [ready, telegramUserId]);
 
     // Load data on mount (only if admin)
     useEffect(() => {
