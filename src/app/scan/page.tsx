@@ -21,6 +21,9 @@ export default function ScanPage() {
     const [useTelegramScanner, setUseTelegramScanner] = React.useState(false);
     const [scanError, setScanError] = React.useState<string | null>(null);
 
+    // Ref to prevent double opening of scanner
+    const hasStartedRef = React.useRef(false);
+
     // Check if Telegram QR scanner is available (TG 6.4+)
     const hasTelegramScanner = React.useMemo(() => {
         if (!webApp) return false;
@@ -67,6 +70,10 @@ export default function ScanPage() {
     const startTelegramScanner = React.useCallback(() => {
         if (!webApp || !hasTelegramScanner) return;
 
+        // Prevent double opening
+        if (hasStartedRef.current) return;
+        hasStartedRef.current = true;
+
         setScanError(null);
         setIsScanning(true);
 
@@ -85,6 +92,7 @@ export default function ScanPage() {
             console.error('Telegram scanner error:', error);
             setScanError('Could not start scanner. Please try again.');
             setIsScanning(false);
+            hasStartedRef.current = false; // Allow retry
         }
     }, [webApp, hasTelegramScanner, handleScan, t]);
 
@@ -95,8 +103,10 @@ export default function ScanPage() {
         setIsScanning(true);
     };
 
-    // Auto-start scanning when page loads
+    // Auto-start scanning when page loads - only once
     React.useEffect(() => {
+        if (hasStartedRef.current) return;
+
         if (hasTelegramScanner) {
             // Use Telegram native scanner
             setUseTelegramScanner(true);
