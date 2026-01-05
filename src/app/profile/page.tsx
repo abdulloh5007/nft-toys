@@ -67,6 +67,37 @@ export default function ProfilePage() {
         loadNFTs();
     }, [firebaseUser]);
 
+    // Copy to clipboard with fallback for Telegram WebApp
+    const copyToClipboard = (text: string) => {
+        // Try modern Clipboard API first
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).catch(() => {
+                // Fallback if Clipboard API fails
+                fallbackCopy(text);
+            });
+        } else {
+            fallbackCopy(text);
+        }
+    };
+
+    // Fallback copy using textarea
+    const fallbackCopy = (text: string) => {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.left = '-9999px';
+        textarea.style.top = '-9999px';
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        try {
+            document.execCommand('copy');
+        } catch (err) {
+            console.error('Copy failed:', err);
+        }
+        document.body.removeChild(textarea);
+    };
+
     const handleTransfer = (nft: NFTItem) => {
         setSelectedNFT(nft);
     };
@@ -139,7 +170,18 @@ export default function ProfilePage() {
                     </span>
                 </div>
 
-                <div className={styles.walletSection}>
+                <div
+                    className={`${styles.walletSection} ${copied ? styles.walletCopied : ''}`}
+                    onClick={() => {
+                        if (user.walletFriendly) {
+                            haptic.impact('light');
+                            copyToClipboard(user.walletFriendly);
+                            haptic.success();
+                            setCopied(true);
+                            setTimeout(() => setCopied(false), 2000);
+                        }
+                    }}
+                >
                     <div className={styles.walletLeft}>
                         <div className={styles.socialIcon} style={{ background: 'linear-gradient(135deg, #22c55e, #16a34a)' }}>
                             <Wallet size={22} color="white" />
@@ -154,17 +196,9 @@ export default function ProfilePage() {
                         </div>
                     </div>
                     {user.walletFriendly && (
-                        <button
-                            className={`${styles.copyBtn} ${copied ? styles.copied : ''}`}
-                            onClick={() => {
-                                navigator.clipboard.writeText(user.walletFriendly);
-                                haptic.success();
-                                setCopied(true);
-                                setTimeout(() => setCopied(false), 2000);
-                            }}
-                        >
+                        <div className={`${styles.copyBtn} ${copied ? styles.copied : ''}`}>
                             {copied ? <Check size={20} /> : <Copy size={20} />}
-                        </button>
+                        </div>
                     )}
                 </div>
 
@@ -216,10 +250,6 @@ export default function ProfilePage() {
                 </div>
 
                 <section className={styles.adminSection}>
-                    <h3 className={styles.sectionTitle}>
-                        <QrCode size={20} />
-                        {t('admin_panel')}
-                    </h3>
 
                     <div className={styles.statsGrid}>
                         <div className={styles.statCard}>
