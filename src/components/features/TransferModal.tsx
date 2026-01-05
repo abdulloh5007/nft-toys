@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, Send, CheckCircle2, User, Loader2, AlertTriangle } from 'lucide-react';
+import { X, Send, CheckCircle2, User, Loader2, AlertTriangle, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { TgsPlayer } from '@/components/ui/TgsPlayer';
 import { useTelegram } from '@/lib/context/TelegramContext';
 import { useLanguage } from '@/lib/context/LanguageContext';
 import styles from './TransferModal.module.css';
@@ -23,7 +24,7 @@ interface TransferModalProps {
 }
 
 export const TransferModal = ({ isOpen, onClose, nft, onSuccess }: TransferModalProps) => {
-    const { firebaseUser, haptic, webApp } = useTelegram();
+    const { firebaseUser, haptic, webApp, user } = useTelegram();
     const { t } = useLanguage();
     const [step, setStep] = useState<'input' | 'confirm' | 'loading' | 'success' | 'error'>('input');
     const [recipient, setRecipient] = useState('');
@@ -61,10 +62,9 @@ export const TransferModal = ({ isOpen, onClose, nft, onSuccess }: TransferModal
             const body: any = {
                 tokenId: nft.tokenId,
                 fromUserId: firebaseUser.uid,
-                initData: webApp?.initData, // For CSRF protection
+                initData: webApp?.initData,
             };
 
-            // Determine if it's username or wallet address
             if (recipient.startsWith('@') || recipientType === 'username') {
                 body.toUsername = recipient.replace('@', '');
             } else {
@@ -96,41 +96,62 @@ export const TransferModal = ({ isOpen, onClose, nft, onSuccess }: TransferModal
         }
     };
 
+    const getRarityClass = (rarity: string) => {
+        const r = rarity.toLowerCase();
+        if (r === 'legendary') return styles['rarity-legendary'];
+        if (r === 'rare') return styles['rarity-rare'];
+        return styles['rarity-common'];
+    };
+
+    const displayRecipient = recipientType === 'username'
+        ? `@${recipient.replace('@', '')}`
+        : recipient;
+
     return (
         <div className={styles.overlay} onClick={handleClose}>
             <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
                 <button className={styles.closeBtn} onClick={handleClose}>
-                    <X size={20} />
+                    <X size={18} />
                 </button>
 
                 {/* Step 1: Input */}
                 {step === 'input' && (
                     <>
-                        <h2 className={styles.title}>{t('transfer')}</h2>
-                        <div className={styles.preview}>
-                            <div className={styles.previewIcon}>🎁</div>
-                            <div className={styles.previewInfo}>
-                                <span className={styles.previewName}>{nft.modelName}</span>
-                                <span className={styles.previewDetail}>#{nft.serialNumber}</span>
+
+                        {/* NFT Preview with Animation */}
+                        <div className={styles.nftPreview}>
+                            <div className={styles.nftAnimation}>
+                                <TgsPlayer
+                                    src={nft.tgsUrl}
+                                    style={{ width: 100, height: 100 }}
+                                    autoplay
+                                    loop
+                                    unstyled
+                                />
+                            </div>
+                            <div className={styles.nftInfo}>
+                                <span className={styles.nftName}>{nft.modelName}</span>
+                                <span className={styles.nftSerial}>#{nft.serialNumber}</span>
                             </div>
                         </div>
 
-                        <div className={styles.tabs}>
-                            <button
-                                className={`${styles.tab} ${recipientType === 'username' ? styles.active : ''}`}
-                                onClick={() => setRecipientType('username')}
-                            >
-                                @username
-                            </button>
-                            <button
-                                className={`${styles.tab} ${recipientType === 'wallet' ? styles.active : ''}`}
-                                onClick={() => setRecipientType('wallet')}
-                            >
-                                {t('wallet')}
-                            </button>
-                        </div>
+                        {/* Recipient Input */}
+                        <div className={styles.inputSection}>
+                            <div className={styles.tabs}>
+                                <button
+                                    className={`${styles.tab} ${recipientType === 'username' ? styles.active : ''}`}
+                                    onClick={() => setRecipientType('username')}
+                                >
+                                    @username
+                                </button>
+                                <button
+                                    className={`${styles.tab} ${recipientType === 'wallet' ? styles.active : ''}`}
+                                    onClick={() => setRecipientType('wallet')}
+                                >
+                                    {t('wallet')}
+                                </button>
+                            </div>
 
-                        <div className={styles.inputGroup}>
                             <div className={styles.inputWrapper}>
                                 {recipientType === 'username' && (
                                     <span className={styles.inputPrefix}>@</span>
@@ -146,6 +167,7 @@ export const TransferModal = ({ isOpen, onClose, nft, onSuccess }: TransferModal
                                     }}
                                 />
                             </div>
+
                             {error && <p className={styles.error}>{error}</p>}
                         </div>
 
@@ -161,22 +183,43 @@ export const TransferModal = ({ isOpen, onClose, nft, onSuccess }: TransferModal
 
                 {/* Step 2: Confirm */}
                 {step === 'confirm' && (
-                    <>
+                    <div className={styles.confirmSection}>
                         <h2 className={styles.title}>{t('confirm_transfer') || 'Confirm Transfer'}</h2>
-                        <div className={styles.recipientCard}>
-                            <div className={styles.avatar}>
-                                <User size={24} />
+
+                        {/* NFT Animation Small */}
+                        <div className={styles.nftPreview}>
+                            <div className={styles.nftAnimation}>
+                                <TgsPlayer
+                                    src={nft.tgsUrl}
+                                    style={{ width: 80, height: 80 }}
+                                    autoplay
+                                    loop
+                                    unstyled
+                                />
                             </div>
-                            <div className={styles.recipientInfo}>
-                                <span className={styles.recipientLabel}>{t('sending_to') || 'Sending to'}</span>
-                                <span className={styles.recipientName}>
-                                    {recipientType === 'username' ? `@${recipient.replace('@', '')}` : recipient}
+                            <div className={styles.nftInfo}>
+                                <span className={styles.nftName}>{nft.modelName}</span>
+                                <span className={styles.nftSerial}>#{nft.serialNumber}</span>
+                            </div>
+                        </div>
+
+                        {/* Transfer Summary */}
+                        <div className={styles.transferSummary}>
+                            <div className={styles.fromTo}>
+                                <span className={styles.fromToLabel}>From</span>
+                                <span className={styles.fromToValue}>
+                                    @{user?.username || 'you'}
                                 </span>
+                            </div>
+                            <ArrowRight size={20} className={styles.arrow} />
+                            <div className={styles.fromTo}>
+                                <span className={styles.fromToLabel}>To</span>
+                                <span className={styles.fromToValue}>{displayRecipient}</span>
                             </div>
                         </div>
 
                         <p className={styles.disclaimer}>
-                            {t('transfer_warning') || 'This action is irreversible. The NFT will be transferred immediately.'}
+                            ⚠️ {t('transfer_warning') || 'This action is irreversible. The NFT will be transferred immediately.'}
                         </p>
 
                         <div className={styles.actions}>
@@ -188,27 +231,27 @@ export const TransferModal = ({ isOpen, onClose, nft, onSuccess }: TransferModal
                                 {t('send') || 'Send'}
                             </Button>
                         </div>
-                    </>
+                    </div>
                 )}
 
                 {/* Step 3: Loading */}
                 {step === 'loading' && (
-                    <div className={styles.center}>
+                    <div className={styles.loadingState}>
                         <Loader2 size={48} className={styles.spinner} />
-                        <p>{t('transferring') || 'Transferring...'}</p>
+                        <p className={styles.loadingText}>{t('transferring') || 'Transferring...'}</p>
                     </div>
                 )}
 
                 {/* Step 4: Success */}
                 {step === 'success' && (
-                    <div className={styles.success}>
+                    <div className={styles.successState}>
                         <div className={styles.successIcon}>
-                            <CheckCircle2 size={48} />
+                            <CheckCircle2 size={40} />
                         </div>
-                        <h2 className={styles.title}>{t('transfer_success') || 'Sent Successfully!'}</h2>
+                        <h2 className={styles.successTitle}>{t('transfer_success') || 'Sent Successfully!'}</h2>
                         <p className={styles.successDesc}>
                             <b>{nft.modelName} #{nft.serialNumber}</b> {t('sent_to') || 'has been sent to'}{' '}
-                            <b>{recipientType === 'username' ? `@${recipient.replace('@', '')}` : recipient}</b>
+                            <b>{displayRecipient}</b>
                         </p>
                         <Button fullWidth onClick={handleClose}>{t('done') || 'Done'}</Button>
                     </div>
@@ -216,11 +259,11 @@ export const TransferModal = ({ isOpen, onClose, nft, onSuccess }: TransferModal
 
                 {/* Step 5: Error */}
                 {step === 'error' && (
-                    <div className={styles.center}>
+                    <div className={styles.errorState}>
                         <div className={styles.errorIcon}>
-                            <AlertTriangle size={48} />
+                            <AlertTriangle size={36} />
                         </div>
-                        <h2 className={styles.title}>{t('error_occurred')}</h2>
+                        <h2 className={styles.errorTitle}>{t('error_occurred')}</h2>
                         <p className={styles.errorDesc}>{error}</p>
                         <Button fullWidth onClick={() => setStep('input')}>
                             {t('try_again') || 'Try Again'}
