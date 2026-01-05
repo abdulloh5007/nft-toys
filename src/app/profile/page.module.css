@@ -398,3 +398,74 @@
     color: var(--text-secondary);
     margin-top: 4px;
 }
+
+/* Social Links Card */
+.socialCard {
+    background: var(--bg-secondary);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    margin-bottom: 24px;
+}
+
+.socialLink {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.2s ease;
+    width: 100%;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+}
+
+.socialLink:hover {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.socialLink:active {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.socialLeft {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.socialIcon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.socialText {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.socialArrow {
+    color: var(--text-secondary);
+    opacity: 0.5;
+    transition: all 0.2s ease;
+}
+
+.socialLink:hover .socialArrow {
+    opacity: 1;
+    transform: translateX(2px);
+}
+
+.socialDivider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.06);
+    margin: 0 16px;
+}

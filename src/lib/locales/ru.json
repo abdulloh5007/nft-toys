@@ -100,5 +100,7 @@
     "enable_animations": "Включить анимации",
     "activated_by": "Активировал",
     "nft_has_owner": "Этот NFT уже имеет владельца",
-    "activated_at": "Активировано"
+    "activated_at": "Активировано",
+    "community_chat": "Чат сообщества",
+    "channel_news": "Новости канала"
 }

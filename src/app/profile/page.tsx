@@ -9,7 +9,7 @@ import { TgsPlayer } from '@/components/ui/TgsPlayer';
 import { useLanguage } from '@/lib/context/LanguageContext';
 import { useTelegram } from '@/lib/context/TelegramContext';
 import { getQRCodeStats } from '@/lib/firebase/firestore';
-import { Lock, User, Wallet, QrCode, Plus, CheckCircle, Clock, Copy, Check, Settings } from 'lucide-react';
+import { Lock, User, Wallet, QrCode, Plus, CheckCircle, Clock, Copy, Check, Settings, MessageCircle, Megaphone, ChevronRight } from 'lucide-react';
 import styles from './page.module.css';
 
 interface NFTItem {
@@ -23,7 +23,7 @@ interface NFTItem {
 
 export default function ProfilePage() {
     const { t } = useLanguage();
-    const { user, firebaseUser, haptic } = useTelegram();
+    const { user, firebaseUser, haptic, webApp } = useTelegram();
     const [selectedNFT, setSelectedNFT] = useState<NFTItem | null>(null);
     const [stats, setStats] = useState({ total: 0, used: 0, created: 0 });
     const [myNFTs, setMyNFTs] = useState<NFTItem[]>([]);
@@ -141,8 +141,8 @@ export default function ProfilePage() {
 
                 <div className={styles.walletSection}>
                     <div className={styles.walletLeft}>
-                        <div className={styles.walletIconBox}>
-                            <Wallet size={20} />
+                        <div className={styles.socialIcon} style={{ background: 'linear-gradient(135deg, #22c55e, #16a34a)' }}>
+                            <Wallet size={22} color="white" />
                         </div>
                         <div className={styles.walletInfo}>
                             <span className={styles.walletLabel}>{t('wallet')}</span>
@@ -168,7 +168,53 @@ export default function ProfilePage() {
                     )}
                 </div>
 
-                {/* Admin Panel */}
+                {/* Social Links Card */}
+                <div className={styles.socialCard}>
+                    <button
+                        className={styles.socialLink}
+                        onClick={(e) => {
+                            e.preventDefault();
+                            haptic.impact('light');
+                            const url = `https://t.me/${process.env.NEXT_PUBLIC_TG_GROUP || 'nfttoys_chat'}`;
+                            if (webApp?.openTelegramLink) {
+                                webApp.openTelegramLink(url);
+                            } else {
+                                window.open(url, '_blank');
+                            }
+                        }}
+                    >
+                        <div className={styles.socialLeft}>
+                            <div className={styles.socialIcon} style={{ background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)' }}>
+                                <MessageCircle size={22} color="white" />
+                            </div>
+                            <span className={styles.socialText}>{t('community_chat') || 'Community Chat'}</span>
+                        </div>
+                        <ChevronRight size={20} className={styles.socialArrow} />
+                    </button>
+                    <div className={styles.socialDivider}></div>
+                    <button
+                        className={styles.socialLink}
+                        onClick={(e) => {
+                            e.preventDefault();
+                            haptic.impact('light');
+                            const url = `https://t.me/${process.env.NEXT_PUBLIC_TG_CHANNEL || 'nfttoys'}`;
+                            if (webApp?.openTelegramLink) {
+                                webApp.openTelegramLink(url);
+                            } else {
+                                window.open(url, '_blank');
+                            }
+                        }}
+                    >
+                        <div className={styles.socialLeft}>
+                            <div className={styles.socialIcon} style={{ background: 'linear-gradient(135deg, #f59e0b, #ef4444)' }}>
+                                <Megaphone size={22} color="white" />
+                            </div>
+                            <span className={styles.socialText}>{t('channel_news') || 'Channel News'}</span>
+                        </div>
+                        <ChevronRight size={20} className={styles.socialArrow} />
+                    </button>
+                </div>
+
                 <section className={styles.adminSection}>
                     <h3 className={styles.sectionTitle}>
                         <QrCode size={20} />

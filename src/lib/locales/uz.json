@@ -100,5 +100,7 @@
     "enable_animations": "Animatsiyalarni yoqish",
     "activated_by": "Faollashtirgan",
     "nft_has_owner": "Bu NFT allaqachon egaga ega",
-    "activated_at": "Faollashtirilgan"
+    "activated_at": "Faollashtirilgan",
+    "community_chat": "Jamoa chati",
+    "channel_news": "Kanal yangiliklari"
 }

@@ -85,6 +85,8 @@ export interface IWebApp {
   // QR Scanner (Telegram 6.4+)
   showScanQrPopup: (params: { text?: string }, callback: (text: string) => boolean | void) => void;
   closeScanQrPopup: VoidFunction;
+  // Open Telegram links natively
+  openTelegramLink: (url: string) => void;
 }
 
 const mockWebApp: IWebApp = {
@@ -199,6 +201,10 @@ const mockWebApp: IWebApp = {
   },
   closeScanQrPopup: () => {
     console.log('[Mock] Close QR Scanner');
+  },
+  openTelegramLink: (url: string) => {
+    console.log('[Mock] Open Telegram Link:', url);
+    window.open(url, '_blank');
   },
 };
 

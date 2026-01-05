@@ -100,5 +100,7 @@
     "enable_animations": "Enable animations",
     "activated_by": "Activated by",
     "nft_has_owner": "This NFT already has an owner",
-    "activated_at": "Activated"
+    "activated_at": "Activated",
+    "community_chat": "Community Chat",
+    "channel_news": "Channel News"
 }
