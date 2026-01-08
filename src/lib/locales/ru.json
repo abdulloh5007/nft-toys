@@ -102,5 +102,6 @@
     "nft_has_owner": "Этот NFT уже имеет владельца",
     "activated_at": "Активировано",
     "community_chat": "Чат сообщества",
-    "channel_news": "Новости канала"
+    "channel_news": "Новости канала",
+    "connecting": "Подключение..."
 }

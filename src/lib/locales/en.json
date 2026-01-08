@@ -102,5 +102,6 @@
     "nft_has_owner": "This NFT already has an owner",
     "activated_at": "Activated",
     "community_chat": "Community Chat",
-    "channel_news": "Channel News"
+    "channel_news": "Channel News",
+    "connecting": "Connecting..."
 }

@@ -8,7 +8,7 @@ import { Navigation } from '@/components/layout/Navigation';
 import { Button } from '@/components/ui/Button';
 import { useLanguage } from '@/lib/context/LanguageContext';
 import { useTelegram } from '@/lib/context/TelegramContext';
-import { Zap, AlertTriangle, Home } from 'lucide-react';
+import { Zap, AlertTriangle, Home, Loader2 } from 'lucide-react';
 import { TgsPlayer } from '@/components/ui/TgsPlayer';
 import styles from './page.module.css';
 
@@ -30,7 +30,7 @@ export default function ActivatePage() {
     const params = useParams();
     const router = useRouter();
     const { t } = useLanguage();
-    const { user, haptic, firebaseUser } = useTelegram();
+    const { user, haptic, firebaseUser, webApp, isAuthenticated } = useTelegram();
     const [toy, setToy] = useState<ToyData | null>(null);
     const [status, setStatus] = useState<PageStatus>('loading');
     const [activationTime, setActivationTime] = useState<string | null>(null);
@@ -38,6 +38,7 @@ export default function ActivatePage() {
     const [activatedByPhoto, setActivatedByPhoto] = useState<string | null>(null);
     const [activatedByFirstName, setActivatedByFirstName] = useState<string | null>(null);
     const [errorMessage, setErrorMessage] = useState<string>('');
+    const [isAuthenticating, setIsAuthenticating] = useState(true);
 
     useEffect(() => {
         const checkQRCode = async () => {
@@ -103,6 +104,22 @@ export default function ActivatePage() {
 
         checkQRCode();
     }, [params.token]);
+
+    // Track Firebase auth state - once authenticated, allow activation
+    useEffect(() => {
+        if (firebaseUser) {
+            setIsAuthenticating(false);
+            console.log('✅ Firebase auth complete, activation enabled');
+        } else if (webApp && !isAuthenticated) {
+            // Still waiting for auth
+            const timeout = setTimeout(() => {
+                // If auth takes too long (5s), still allow activation with basic user info
+                console.log('⚠️ Auth timeout, allowing activation with basic info');
+                setIsAuthenticating(false);
+            }, 5000);
+            return () => clearTimeout(timeout);
+        }
+    }, [firebaseUser, webApp, isAuthenticated]);
 
     // Handler for home button - redirects to Telegram if not authenticated
     const handleHomeClick = () => {
@@ -345,9 +362,19 @@ export default function ActivatePage() {
                     variant="primary"
                     fullWidth
                     className={styles.activateBtn}
+                    disabled={isAuthenticating && !!user}
                 >
-                    <Zap size={18} fill="white" />
-                    {t('activate') || 'Activate'}
+                    {isAuthenticating && user ? (
+                        <>
+                            <Loader2 size={18} className={styles.spinner} />
+                            {t('connecting') || 'Connecting...'}
+                        </>
+                    ) : (
+                        <>
+                            <Zap size={18} fill="white" />
+                            {t('activate') || 'Activate'}
+                        </>
+                    )}
                 </Button>
             </div>
         );
