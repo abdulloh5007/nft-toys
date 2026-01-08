@@ -155,18 +155,20 @@ export async function POST(request: NextRequest) {
         const txSignature = signTransaction(txData, TOKEN_SECRET);
         const txHash = generateTxHash('transfer', nftData.ownerWallet, recipientWallet, tokenId, transferTimestamp);
 
-        // Update NFT owner and add to history
+        // Update NFT owner
         await updateDoc(nftRef, {
             ownerWallet: recipientWallet,
             ownerId: recipientUserId,
             lastTransferAt: serverTimestamp(),
-            ownerHistory: arrayUnion({
-                wallet: recipientWallet,
-                userId: recipientUserId,
-                type: 'transfer',
-                fromWallet: nftData.ownerWallet,
-                timestamp: transferTimestamp,
-            }),
+        });
+
+        // Add transfer to history subcollection
+        await addDoc(collection(db, 'nfts', tokenId, 'history'), {
+            wallet: recipientWallet,
+            userId: recipientUserId,
+            type: 'transfer',
+            fromWallet: nftData.ownerWallet,
+            timestamp: serverTimestamp(),
         });
 
         // Remove from sender's wallet

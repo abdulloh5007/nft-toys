@@ -182,13 +182,14 @@ export async function POST(request: NextRequest) {
                 description: `NFT Toy - ${qrData.modelName} (${qrData.rarity})`,
                 image: `/models/${qrData.tgsFile}`,
             },
-            // Owner history for tracking all transfers
-            ownerHistory: [{
-                wallet: userWallet,
-                userId: userId || null,
-                type: 'mint',
-                timestamp: mintTimestamp,
-            }],
+        });
+
+        // Add first history entry to subcollection
+        await addDoc(collection(db, 'nfts', tokenId, 'history'), {
+            wallet: userWallet,
+            userId: userId || null,
+            type: 'mint',
+            timestamp: serverTimestamp(),
         });
 
         // Create mint transaction

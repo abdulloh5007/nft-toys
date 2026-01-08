@@ -87,6 +87,8 @@ export interface IWebApp {
   closeScanQrPopup: VoidFunction;
   // Open Telegram links natively
   openTelegramLink: (url: string) => void;
+  // Request write access (Telegram 6.9+) - ask user for permission to send messages
+  requestWriteAccess: (callback?: (allowed: boolean) => void) => void;
 }
 
 const mockWebApp: IWebApp = {
@@ -205,6 +207,10 @@ const mockWebApp: IWebApp = {
   openTelegramLink: (url: string) => {
     console.log('[Mock] Open Telegram Link:', url);
     window.open(url, '_blank');
+  },
+  requestWriteAccess: (cb?: (allowed: boolean) => void) => {
+    console.log('[Mock] Request Write Access');
+    if (cb) cb(true);
   },
 };
 

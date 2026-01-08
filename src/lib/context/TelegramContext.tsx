@@ -137,6 +137,14 @@ export const TelegramProvider = ({ children }: { children: React.ReactNode }) =>
                     console.log('ℹ️ CloudStorage not available, skipping cache load');
                 }
             }
+
+            // Request write access - ask user permission for bot to send messages
+            // This shows a native Telegram popup on first open
+            if (typeof app.requestWriteAccess === 'function') {
+                app.requestWriteAccess((allowed) => {
+                    console.log(allowed ? '✅ Write access granted' : '❌ Write access denied');
+                });
+            }
         }
     }, []);
 
