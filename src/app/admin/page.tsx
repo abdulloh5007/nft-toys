@@ -10,6 +10,7 @@ import { useLanguage } from '@/lib/context/LanguageContext';
 import { useTelegram } from '@/lib/context/TelegramContext';
 import { QrCode, Plus, CheckCircle, Clock, Eye, X, AlertTriangle, Trash2, ChevronDown, Lock } from 'lucide-react';
 import { TelegramBackButton } from '@/components/ui/TelegramBackButton';
+import { api } from '@/lib/api';
 import styles from './page.module.css';
 
 // Admin whitelist - Telegram IDs allowed to access admin
@@ -145,8 +146,7 @@ export default function AdminPage() {
     const loadData = async () => {
         setIsLoadingList(true);
         try {
-            const response = await fetch('/api/qr/list');
-            const data = await response.json();
+            const data = await api.qr.list();
 
             if (data.qrCodes) {
                 setQrCodes(data.qrCodes);
@@ -182,29 +182,10 @@ export default function AdminPage() {
         setLastCreatedUrl('');
 
         try {
-            const response = await fetch('/api/qr/create', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    modelName: selectedModel,
-                    serialNumber,
-                }),
+            const data = await api.qr.create({
+                modelName: selectedModel,
+                serialNumber: parseInt(serialNumber),
             });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                if (data.code === 'DUPLICATE') {
-                    setError(t('qr_exists'));
-                } else if (data.code === 'SERIAL_EXISTS') {
-                    setError(`${t('serial_exists')}: ${data.existingModel}`);
-                } else {
-                    setError(data.error || t('error_occurred'));
-                }
-                return;
-            }
 
             // Store the activation URL
             setLastCreatedUrl(`${window.location.origin}${data.activationUrl}`);
@@ -215,9 +196,15 @@ export default function AdminPage() {
             setSelectedRarity('');
             setValidationErrors({ rarity: false, model: false, serial: false });
             await loadData();
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error creating QR:', error);
-            setError(t('error_occurred'));
+            if (error.message?.includes('DUPLICATE') || error.message?.includes('exists')) {
+                setError(t('qr_exists'));
+            } else if (error.message?.includes('SERIAL_EXISTS')) {
+                setError(t('serial_exists'));
+            } else {
+                setError(t('error_occurred'));
+            }
         } finally {
             setIsLoading(false);
         }
@@ -247,14 +234,9 @@ export default function AdminPage() {
         if (!deletingQR) return;
 
         try {
-            const response = await fetch(`/api/qr/delete?nfcId=${encodeURIComponent(deletingQR.nfcId)}`, {
-                method: 'DELETE',
-            });
-
-            if (response.ok) {
-                setDeletingQR(null);
-                await loadData();
-            }
+            await api.qr.delete(deletingQR.nfcId);
+            setDeletingQR(null);
+            await loadData();
         } catch (error) {
             console.error('Error deleting QR:', error);
         }

@@ -4,6 +4,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { getTelegramWebApp, IWebApp } from '@/lib/utils/telegram';
 import { auth } from '@/lib/firebase/config';
 import { signInWithCustomToken, User, onAuthStateChanged } from 'firebase/auth';
+import { api } from '@/lib/api';
 
 const USER_CACHE_KEY = 'user_profile_cache';
 
@@ -156,51 +157,41 @@ export const TelegramProvider = ({ children }: { children: React.ReactNode }) =>
             setAuthAttempted(true);
 
             try {
-                const response = await fetch('/api/auth/telegram', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ initData: webApp.initData }),
-                });
+                const data = await api.auth.telegram(webApp.initData);
+                await signInWithCustomToken(auth, data.token);
 
-                if (response.ok) {
-                    const data = await response.json();
-                    await signInWithCustomToken(auth, data.token);
+                // Build extended user info with wallet and photo_url
+                const userInfo = {
+                    ...webApp.initDataUnsafe?.user,
+                    walletAddress: data.user.walletAddress,
+                    walletFriendly: data.user.walletFriendly,
+                    photo_url: data.user.photoUrl || webApp.initDataUnsafe?.user?.photo_url,
+                };
 
-                    // Build extended user info with wallet and photo_url
-                    const userInfo = {
-                        ...webApp.initDataUnsafe?.user,
-                        walletAddress: data.user.walletAddress,
-                        walletFriendly: data.user.walletFriendly,
-                        photo_url: data.user.photoUrl || webApp.initDataUnsafe?.user?.photo_url,
-                    };
+                setExtendedUser(userInfo);
 
-                    setExtendedUser(userInfo);
-
-                    // Cache user data to CloudStorage for faster loading on next open
-                    // Only works in Telegram WebApp 6.9+, silently skip in older versions or browser
-                    if (isCloudStorageAvailable(webApp)) {
-                        try {
-                            webApp.CloudStorage.setItem(
-                                USER_CACHE_KEY,
-                                JSON.stringify(userInfo),
-                                (error) => {
-                                    if (error) {
-                                        console.warn('Failed to cache user profile:', error);
-                                    } else {
-                                        console.log('💾 Cached user profile to CloudStorage');
-                                    }
+                // Cache user data to CloudStorage for faster loading on next open
+                // Only works in Telegram WebApp 6.9+, silently skip in older versions or browser
+                if (isCloudStorageAvailable(webApp)) {
+                    try {
+                        webApp.CloudStorage.setItem(
+                            USER_CACHE_KEY,
+                            JSON.stringify(userInfo),
+                            (error) => {
+                                if (error) {
+                                    console.warn('Failed to cache user profile:', error);
+                                } else {
+                                    console.log('💾 Cached user profile to CloudStorage');
                                 }
-                            );
-                        } catch (e) {
-                            // CloudStorage not supported, silently ignore
-                            console.log('ℹ️ CloudStorage not available, skipping cache save');
-                        }
+                            }
+                        );
+                    } catch (e) {
+                        // CloudStorage not supported, silently ignore
+                        console.log('ℹ️ CloudStorage not available, skipping cache save');
                     }
-
-                    console.log('✅ Firebase auth successful');
-                } else {
-                    console.warn('⚠️ Auth failed:', await response.text());
                 }
+
+                console.log('✅ Firebase auth successful');
             } catch (error) {
                 console.error('Firebase auth error:', error);
             }

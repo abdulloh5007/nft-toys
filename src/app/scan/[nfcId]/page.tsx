@@ -10,6 +10,7 @@ import { useLanguage } from '@/lib/context/LanguageContext';
 import { useTelegram } from '@/lib/context/TelegramContext';
 import { Zap } from 'lucide-react';
 import { TgsPlayer } from '@/components/ui/TgsPlayer';
+import { api } from '@/lib/api';
 import styles from './page.module.css';
 
 interface ActivatedToy {
@@ -54,16 +55,10 @@ export default function ScanResultPage() {
 
             try {
                 setStatus('activating');
-                const response = await fetch('/api/qr/activate', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        token, // Send token, not nfcId - API extracts nfcId from token
-                        userId: firebaseUser?.uid
-                    }),
+                const data = await api.qr.activate({
+                    token,
+                    userId: firebaseUser?.uid,
                 });
-
-                const data = await response.json();
 
                 if (data.success) {
                     setToy(data.toy);
@@ -79,10 +74,15 @@ export default function ScanResultPage() {
                     setStatus('error');
                     setErrorMessage(data.error || 'Activation failed');
                 }
-            } catch (error) {
+            } catch (error: any) {
                 console.error('Activation error:', error);
-                setStatus('error');
-                setErrorMessage('Network error. Please try again.');
+                if (error.message?.includes('ALREADY_USED')) {
+                    setStatus('already_used');
+                    setErrorMessage('This QR code has already been activated.');
+                } else {
+                    setStatus('error');
+                    setErrorMessage('Network error. Please try again.');
+                }
             }
         };
 

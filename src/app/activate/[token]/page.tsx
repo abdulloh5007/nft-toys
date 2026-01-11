@@ -10,6 +10,7 @@ import { useLanguage } from '@/lib/context/LanguageContext';
 import { useTelegram } from '@/lib/context/TelegramContext';
 import { Zap, AlertTriangle, Home, Loader2 } from 'lucide-react';
 import { TgsPlayer } from '@/components/ui/TgsPlayer';
+import { api } from '@/lib/api';
 import styles from './page.module.css';
 
 type PageStatus = 'loading' | 'valid' | 'invalid_token' | 'already_used' | 'toy_not_found' | 'activated_success';
@@ -53,22 +54,7 @@ export default function ActivatePage() {
 
             // Check QR code status via API
             try {
-                const response = await fetch(`/api/qr/activate?token=${encodeURIComponent(token)}`);
-                const data = await response.json();
-
-                if (!response.ok) {
-                    if (data.code === 'INVALID_TOKEN') {
-                        setStatus('invalid_token');
-                        setErrorMessage('Invalid token');
-                    } else if (data.code === 'NOT_FOUND') {
-                        setStatus('toy_not_found');
-                        setErrorMessage('QR code not found');
-                    } else {
-                        setStatus('invalid_token');
-                        setErrorMessage(data.error || 'Unknown error');
-                    }
-                    return;
-                }
+                const data = await api.qr.check(token);
 
                 // Check if already used
                 if (data.status === 'used') {
@@ -95,10 +81,18 @@ export default function ActivatePage() {
                     status: 'available',
                 });
                 setStatus('valid');
-            } catch (error) {
+            } catch (error: any) {
                 console.error('Error checking QR:', error);
-                setStatus('invalid_token');
-                setErrorMessage('Error validating QR code');
+                if (error.message?.includes('INVALID_TOKEN')) {
+                    setStatus('invalid_token');
+                    setErrorMessage('Invalid token');
+                } else if (error.message?.includes('NOT_FOUND')) {
+                    setStatus('toy_not_found');
+                    setErrorMessage('QR code not found');
+                } else {
+                    setStatus('invalid_token');
+                    setErrorMessage('Error validating QR code');
+                }
             }
         };
 
@@ -160,32 +154,21 @@ export default function ActivatePage() {
             const token = decodeURIComponent(rawToken);
 
             // Activate via API
-            const response = await fetch('/api/qr/activate', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    token,
-                    userId: firebaseUser?.uid || `tg_${user?.id}` || 'anonymous',
-                    username: user?.username || user?.first_name || null,
-                    userPhoto: user?.photo_url || null,
-                    firstName: user?.first_name || null,
-                }),
+            const data = await api.qr.activate({
+                token,
+                userId: firebaseUser?.uid || `tg_${user?.id}` || 'anonymous',
+                username: user?.username || user?.first_name || undefined,
+                userPhoto: user?.photo_url || undefined,
+                firstName: user?.first_name || undefined,
             });
 
-            const data = await response.json();
-
-            if (!response.ok) {
-                if (data.code === 'ALREADY_USED') {
-                    setStatus('already_used');
-                    setActivationTime(data.usedAt
-                        ? new Date(data.usedAt).toLocaleString('ru-RU')
-                        : ''
-                    );
-                    return;
-                }
-                throw new Error(data.error);
+            if (data.code === 'ALREADY_USED') {
+                setStatus('already_used');
+                setActivationTime(data.usedAt
+                    ? new Date(data.usedAt).toLocaleString('ru-RU')
+                    : ''
+                );
+                return;
             }
 
             // Update toy state

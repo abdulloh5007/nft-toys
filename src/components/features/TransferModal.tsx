@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { TgsPlayer } from '@/components/ui/TgsPlayer';
 import { useTelegram } from '@/lib/context/TelegramContext';
 import { useLanguage } from '@/lib/context/LanguageContext';
+import { api } from '@/lib/api';
 import styles from './TransferModal.module.css';
 
 interface NFTItem {
@@ -59,29 +60,19 @@ export const TransferModal = ({ isOpen, onClose, nft, onSuccess }: TransferModal
         setError('');
 
         try {
-            const body: any = {
+            const transferData: any = {
                 tokenId: nft.tokenId,
                 fromUserId: firebaseUser.uid,
                 initData: webApp?.initData,
             };
 
             if (recipient.startsWith('@') || recipientType === 'username') {
-                body.toUsername = recipient.replace('@', '');
+                transferData.toUsername = recipient.replace('@', '');
             } else {
-                body.toAddress = recipient;
+                transferData.toAddress = recipient;
             }
 
-            const response = await fetch('/api/nft/transfer', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body),
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.error || 'Transfer failed');
-            }
+            await api.nft.transfer(transferData);
 
             haptic.success();
             setStep('success');
