@@ -218,8 +218,8 @@ export const getTelegramWebApp = (): IWebApp | null => {
   if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp) {
     return (window as any).Telegram.WebApp;
   }
-  // Return mock if strictly in dev mode and not in TG, otherwise null or mock depending on preference
-  // For development in browser, we return mock
+  // In development, return mock for testing
+  // In production, return null (browser visitors will be redirected to Telegram)
   if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
     return mockWebApp;
   }

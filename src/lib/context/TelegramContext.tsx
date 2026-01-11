@@ -72,17 +72,29 @@ export const TelegramProvider = ({ children }: { children: React.ReactNode }) =>
     useEffect(() => {
         const app = getTelegramWebApp();
         if (app) {
-            app.ready();
-            app.expand();
+            try {
+                app.ready();
+                app.expand();
+            } catch (e) {
+                console.log('WebApp ready/expand not available');
+            }
 
-            // Disable swipe-to-close gesture
-            if (typeof app.disableVerticalSwipes === 'function') {
-                app.disableVerticalSwipes();
+            // Disable swipe-to-close gesture (wrap in try-catch for older versions)
+            try {
+                if (typeof app.disableVerticalSwipes === 'function') {
+                    app.disableVerticalSwipes();
+                }
+            } catch (e) {
+                console.log('disableVerticalSwipes not available');
             }
 
             // Enable closing confirmation dialog
-            if (typeof app.enableClosingConfirmation === 'function') {
-                app.enableClosingConfirmation();
+            try {
+                if (typeof app.enableClosingConfirmation === 'function') {
+                    app.enableClosingConfirmation();
+                }
+            } catch (e) {
+                console.log('enableClosingConfirmation not available');
             }
 
             setWebApp(app);
@@ -140,12 +152,20 @@ export const TelegramProvider = ({ children }: { children: React.ReactNode }) =>
             }
 
             // Request write access - ask user permission for bot to send messages
-            // This shows a native Telegram popup on first open
-            if (typeof app.requestWriteAccess === 'function') {
-                app.requestWriteAccess((allowed) => {
-                    console.log(allowed ? '✅ Write access granted' : '❌ Write access denied');
-                });
+            // This shows a native Telegram popup on first open (wrap in try-catch)
+            try {
+                if (typeof app.requestWriteAccess === 'function') {
+                    app.requestWriteAccess((allowed) => {
+                        console.log(allowed ? '✅ Write access granted' : '❌ Write access denied');
+                    });
+                }
+            } catch (e) {
+                console.log('requestWriteAccess not available');
             }
+        } else {
+            // Browser mode - no Telegram WebApp, but still set ready=true
+            console.log('ℹ️ Running in browser mode (no Telegram WebApp)');
+            setReady(true);
         }
     }, []);
 
