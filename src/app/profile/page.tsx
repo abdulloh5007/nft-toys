@@ -9,6 +9,7 @@ import { TgsPlayer } from '@/components/ui/TgsPlayer';
 import { useLanguage } from '@/lib/context/LanguageContext';
 import { useTelegram } from '@/lib/context/TelegramContext';
 import { getQRCodeStats } from '@/lib/firebase/firestore';
+import { api } from '@/lib/api';
 import { Lock, User, Wallet, QrCode, Plus, CheckCircle, Clock, Copy, Check, Settings, MessageCircle, Megaphone, ChevronRight } from 'lucide-react';
 import styles from './page.module.css';
 
@@ -53,8 +54,7 @@ export default function ProfilePage() {
             }
 
             try {
-                const response = await fetch(`/api/nft/my?userId=${firebaseUser.uid}`);
-                const data = await response.json();
+                const data = await api.nft.my({ userId: firebaseUser.uid });
                 if (data.success) {
                     setMyNFTs(data.nfts || []);
                 }
@@ -335,15 +335,16 @@ export default function ProfilePage() {
                     isOpen={!!selectedNFT}
                     onClose={() => setSelectedNFT(null)}
                     nft={selectedNFT}
-                    onSuccess={() => {
+                    onSuccess={async () => {
                         setSelectedNFT(null);
                         // Reload NFTs after successful transfer
                         if (firebaseUser?.uid) {
-                            fetch(`/api/nft/my?userId=${firebaseUser.uid}`)
-                                .then(res => res.json())
-                                .then(data => {
-                                    if (data.success) setMyNFTs(data.nfts || []);
-                                });
+                            try {
+                                const data = await api.nft.my({ userId: firebaseUser.uid });
+                                if (data.success) setMyNFTs(data.nfts || []);
+                            } catch (e) {
+                                console.error('Error reloading NFTs:', e);
+                            }
                         }
                     }}
                 />
